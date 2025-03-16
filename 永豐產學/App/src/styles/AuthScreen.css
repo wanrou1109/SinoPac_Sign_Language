@@ -1,0 +1,54 @@
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background-color: #fff;
+}
+
+.header {
+    background-color: #254A91;
+    color: white;
+    text-align: center;
+    font-size: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+    width: 100%;
+}
+
+.branch-dropdown {
+    width: 80%;
+    max-width: 500px;
+    padding: 12px;
+    font-size: 1.2rem;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    margin-top: 150px;
+    margin-bottom: 200px;
+    background-color: #f0f0f0;
+}
+  
+  /* 確認按鈕 */
+.confirm-button {
+    border: none;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    padding: 12px 24px;
+    width: 80%;
+    max-width: 300px;
+}
+  
+  /* 不可點擊時的樣式 */
+.confirm-button.disabled {
+    background-color: #e0e0e0;
+    color: #b0b0b0;
+    cursor: not-allowed;
+}
+  
+  /* 可點擊時的樣式 */
+.confirm-button.active {
+    background-color: #254A91;
+    color: white;
+    cursor: pointer;
+}

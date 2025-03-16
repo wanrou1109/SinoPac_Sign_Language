@@ -1,0 +1,19 @@
+/* 確保畫面保持直向佈局 */
+@media (min-aspect-ratio: 1/1) { 
+    /* 當螢幕寬度大於高度時（橫向），強制設定為直向 */
+    body {
+      transform: rotate(0deg);
+      width: 500px; /* 固定直向寬度 */
+      height: 100%;
+      margin: auto;
+    }
+  }
+.header {
+    background-color: #254A91;
+    color: white;
+    text-align: center;
+    font-size: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+    width: 100%;
+}
