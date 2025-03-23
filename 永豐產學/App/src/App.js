@@ -10,7 +10,6 @@ import TextEditor from './components/TextEditor.js';
 import ThankYouScreen from './components/ThankYouScreen.js';
 import {AppProvider} from './contexts/AppContext.js';
 import './App.js';
-// import './styles/styles.css';
 
 function App() {
     return (
