@@ -1,32 +1,12 @@
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
+import Header from './Header.js';
 import '../styles/Feedback.css';
 
-const Header = ({title = '使用回饋', showBackButton = true, onBack}) => {
-    const navigate = useNavigate();
-
-    const handleBack = () => {
-        if(onBack){
-            onBack();
-        }else{
-            navigate(-1);
-        }
-    };
-
+const FeedbackScreen = () => {
     return (
-        <header className='header'>
-            <div className='header-content'>
-                {showBackButton && (
-                    <button className='back-button' onClick={handleBack}>
-                        <span className='back-icon'> ← </span>
-                        返回
-                    </button>
-                )}
-
-                <h1 className='header-title'>{title}</h1>
-            </div>
-        </header>
+        <Header title = '顧客回饋' />
     );
 };
 
-export default Header;
+export default FeedbackScreen;

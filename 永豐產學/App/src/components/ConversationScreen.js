@@ -13,7 +13,6 @@ const ConversationScreen = () => {
     const {
         conversations,
         userType,
-        toggleUserType
     } = useAppContext();
 
     // 語音辨識
@@ -23,7 +22,7 @@ const ConversationScreen = () => {
 
     // 手語辨識
     const handleSignLanguageRecognition = () => {
-        navigate('/sign-language');
+        navigate('/sign-language-recognition');
     };
 
     // 編輯訊息
@@ -37,7 +36,7 @@ const ConversationScreen = () => {
         if(userType === 'staff') {
             navigate('/speech-recognition', {state: {messageID}});
         } else {
-            navigate('/sign-language', {state: {messageID}});
+            navigate('/sign-language-recognition', {state: {messageID}});
         }
     };
 
@@ -46,11 +45,54 @@ const ConversationScreen = () => {
         navigate('/feedback');
     };
 
-
-
     return (
-        <Header title = {selectedBranch || '永豐銀行'} />
+        <div className='conversation-screen'>
+            <Header title = {selectedBranch || '永豐銀行'} showBackButton = {true} />
+            <div className='conversation-container'>
+                <div className='message-list'>
+                    {conversations.map((message) => (
+                        <div 
+                        key={message.id} 
+                        className={`message ${message.sender === 'staff' ? 'staff-message' : 'customer-message'}`}
+                        >
+                            {/* 訊息 */}
+                            <div className='message-content'>
+                                <p> {message.text} </p>
+                            </div>
+                            <div className='message-actions'>
+                                {/* 編輯按鈕 */}
+                                <button 
+                                className='icon-button edit-button'
+                                onClick={() => handleEditMessage(message.id)}
+                                >
+                                    <img src='../icon/edit.png'></img>
+                                </button>
+                                {/* 重新錄製按鈕 */}
+                                <button
+                                className='icon-button record-button'
+                                onClick={() => handleRecordMessage(message.id)}
+                                >
+                                    <img src='../icon/refresh.png'></img>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className='action-bar'>
+                <button className='sign-button' onClick={handleSignLanguageRecognition}>
+                    手語辨識
+                </button>
+                <button className='finish-button' onClick={handleFinishService}>
+                    完成業務
+                </button>
+                <button className='speech-button' onClick={handleSpeechRecognition}>
+                    語音辨識
+                </button>
+            </div>
+        </div>
     );
-}
+};
 
 export default ConversationScreen;
