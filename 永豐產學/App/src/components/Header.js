@@ -2,10 +2,11 @@ import React from 'react';
 import {useNavigate} from 'react-router-dom';
 import '../styles/Header.css';
 
-const Header = () => {
+// 新增 title 作為 prop
+const Header = ({ title = '手語 / 語音辨識系統' }) => {
     return (
         <div className="header">
-            手語 / 語音辨識系統
+            {title}
         </div>
     );
 };
