@@ -1,5 +1,12 @@
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
+import Header from './Header.js';
 import '../styles/Feedback.css';
 
-export default Header;
+const FeedbackScreen = () => {
+    return (
+        <Header title = '顧客回饋' />
+    );
+};
+
+export default FeedbackScreen;
