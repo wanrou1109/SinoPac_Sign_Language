@@ -15,7 +15,7 @@
   font-size: 25px;
   border: 1px solid #ccc;
   border-radius: 10px;
-  margin-top: 30%;
+  margin-top: 35%;
   margin-bottom: 40%;
   background-color: #f0f0f0;
 }
@@ -24,8 +24,7 @@
   padding: 10px;
   font-size: 20px;
 }
-  
-  /* 確認按鈕 */
+
 .confirm-button {
   border: none;
   border-radius: 10px;
@@ -35,14 +34,12 @@
   max-width: 300px;
 }
   
-  /* 不可點擊時的樣式 */
 .confirm-button.disabled {
   background-color: #e0e0e0;
   color: #b0b0b0;
   cursor: not-allowed;
 }
   
-  /* 可點擊時的樣式 */
 .confirm-button.active {
   background-color: #254A91;
   color: white;
