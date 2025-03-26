@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../styles/AuthScreen.css';
+import '../styles/AuthScreen.css';
+import Header from './Header.js';
 
 const AuthScreen = () => {
     const [selectedBranch, setSelectedBranch] = useState('');     
 
     return (
         <div className='auth-container'>
-            <div className='header'>手語/語音辨識系統</div>
+            <Header title='手語 / 語音辨識系統' />
 
             <select className='branch-dropdown' value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)}>
                 <option value="">請選擇分行</option>
