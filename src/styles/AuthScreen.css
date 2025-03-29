@@ -1,0 +1,47 @@
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center;
+  position: relative;
+  height: 100%;
+  background-color: #fff;
+}
+
+.branch-dropdown {
+  width: 80%;
+  max-width: 500px;
+  padding: 12px;
+  font-size: 25px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 35%;
+  margin-bottom: 40%;
+  background-color: #f0f0f0;
+}
+
+.branch-dropdown option {
+  padding: 10px;
+  font-size: 20px;
+}
+
+.confirm-button {
+  border: none;
+  border-radius: 10px;
+  font-size: 25px;
+  padding: 15px 20px;
+  width: 80%;
+  max-width: 300px;
+}
+  
+.confirm-button.disabled {
+  background-color: #e0e0e0;
+  color: #b0b0b0;
+  cursor: not-allowed;
+}
+  
+.confirm-button.active {
+  background-color: #254A91;
+  color: white;
+  cursor: pointer;
+}
