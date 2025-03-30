@@ -9,11 +9,7 @@ const ConversationScreen = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const{selectedBranch} = location.state || {};
-
-    const {
-        conversations,
-        userType,
-    } = useAppContext();
+    const {conversations} = useAppContext();
 
     // 語音辨識
     const handleSpeechRecognition = () => {
@@ -31,9 +27,9 @@ const ConversationScreen = () => {
     };
 
     // 重新錄製訊息
-    const handleRecordMessage = (messageID) => {
+    const handleRecordMessage = (messageID, sender) => {
         // 行員或聾人
-        if(userType === 'staff') {
+        if(sender === 'staff') {
             navigate('/speech-recognition', {state: {messageID}});
         } else {
             navigate('/sign-language-recognition', {state: {messageID}});
@@ -62,17 +58,17 @@ const ConversationScreen = () => {
                             <div className='message-actions'>
                                 {/* 編輯按鈕 */}
                                 <button 
-                                className='icon-button edit-button'
+                                className='image-button edit-button'
                                 onClick={() => handleEditMessage(message.id)}
                                 >
-                                    <img src='../icon/edit.png'></img>
+                                    <img src='images/edit.png' width={'25px'}></img>
                                 </button>
                                 {/* 重新錄製按鈕 */}
                                 <button
-                                className='icon-button record-button'
+                                className='image-button refresh-button'
                                 onClick={() => handleRecordMessage(message.id)}
                                 >
-                                    <img src='../icon/refresh.png'></img>
+                                    <img src='images/refresh.png' width={'25px'}></img>
                                 </button>
                             </div>
                         </div>
