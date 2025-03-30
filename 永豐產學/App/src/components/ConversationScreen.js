@@ -9,11 +9,7 @@ const ConversationScreen = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const{selectedBranch} = location.state || {};
-
-    const {
-        conversations,
-        userType,
-    } = useAppContext();
+    const {conversations} = useAppContext();
 
     // 語音辨識
     const handleSpeechRecognition = () => {
@@ -31,9 +27,9 @@ const ConversationScreen = () => {
     };
 
     // 重新錄製訊息
-    const handleRecordMessage = (messageID) => {
+    const handleRecordMessage = (messageID, sender) => {
         // 行員或聾人
-        if(userType === 'staff') {
+        if(sender === 'staff') {
             navigate('/speech-recognition', {state: {messageID}});
         } else {
             navigate('/sign-language-recognition', {state: {messageID}});
