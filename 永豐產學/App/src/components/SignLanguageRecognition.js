@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext.js';
 import Header from './Header.js';
+import '../styles/SignLanguageRecognition.css';
 
 const SignLanguageRecognition = () => {
     const navigate = useNavigate();
@@ -45,7 +46,8 @@ const SignLanguageRecognition = () => {
             // 這裡要連到 API，目前模擬
             const timer = setTimeout(() => {
                 setResult('（模擬）：我要辦理存款。');
-            }, 3000);
+                setIsRecording(false);   // 完成辨識後自動停止錄製
+            }, 1500);
 
             return () => clearTimeout(timer);
         }
@@ -88,7 +90,7 @@ const SignLanguageRecognition = () => {
 
     return (
         <div className='sign-language-recognition-screen'>
-            <Header title = {selectedBranch || '永豐銀行'} onBack = {handleCancel} />
+            <Header title = {selectedBranch || '永豐銀行'} showBackButton = {handleCancel} />
 
             <div className='recognition-container'>
                 <div className='video-container'>
@@ -99,45 +101,24 @@ const SignLanguageRecognition = () => {
                         muted
                         className = {isRecording ? 'recording' : ''} 
                     /> 
-                    {isRecording && (
-                        <div className='recording-indicator'>
-                            <div className='pulse-animation red'>
-                                <span>（test）錄製中</span>
-                            </div>
-                        </div>
-                    )}
                 </div>
-
-                {recognitionStatus === 'processing' && (
-                    <div className='processing-indicator'>
-                        <div className='spinner'></div>
-                        <p>（test）正在辨識手語...</p>
-                    </div>
-                )}
-
-                {result && !isRecording && recognitionStatus !== 'processing' && (
-                    <div className="result-display">
-                        <h3>辨識結果:</h3>
-                        <p>{result}</p>
-                    </div>
-                )}
             </div>
 
             <div className='action-bar'>
                 {!isRecording ? (
                     <button 
-                        className='record-button start'
+                        className='record-button'
                         onClick={handleStartRecording}
                         disabled={recognitionStatus === 'processing'}
                     >
-                        開始錄製
+                        <div className='button-inner'></div>
                     </button>
                 ) : (
                     <button
-                        className='recording-button stop'
+                        className='record-button recording-active'
                         onClick={handleStopRecording}
                     >
-                        停止錄製
+                        <div className='button-inner'></div>
                     </button>
                 )}
             </div>

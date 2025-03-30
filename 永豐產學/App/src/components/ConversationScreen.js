@@ -65,14 +65,14 @@ const ConversationScreen = () => {
                                 className='icon-button edit-button'
                                 onClick={() => handleEditMessage(message.id)}
                                 >
-                                    <img src='../icon/edit.png'></img>
+                                    <img src='images/edit.png' width={'15px'}></img>
                                 </button>
                                 {/* 重新錄製按鈕 */}
                                 <button
-                                className='icon-button record-button'
+                                className='icon-button refresh-button'
                                 onClick={() => handleRecordMessage(message.id)}
                                 >
-                                    <img src='../icon/refresh.png'></img>
+                                    <img src='images/refresh.png' width={'15px'}></img>
                                 </button>
                             </div>
                         </div>
