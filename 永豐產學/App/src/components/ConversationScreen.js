@@ -62,17 +62,17 @@ const ConversationScreen = () => {
                             <div className='message-actions'>
                                 {/* 編輯按鈕 */}
                                 <button 
-                                className='icon-button edit-button'
+                                className='image-button edit-button'
                                 onClick={() => handleEditMessage(message.id)}
                                 >
-                                    <img src='images/edit.png' width={'15px'}></img>
+                                    <img src='images/edit.png' width={'25px'}></img>
                                 </button>
                                 {/* 重新錄製按鈕 */}
                                 <button
-                                className='icon-button refresh-button'
+                                className='image-button refresh-button'
                                 onClick={() => handleRecordMessage(message.id)}
                                 >
-                                    <img src='images/refresh.png' width={'15px'}></img>
+                                    <img src='images/refresh.png' width={'25px'}></img>
                                 </button>
                             </div>
                         </div>

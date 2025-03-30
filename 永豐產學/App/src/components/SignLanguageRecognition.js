@@ -46,7 +46,6 @@ const SignLanguageRecognition = () => {
             // 這裡要連到 API，目前模擬
             const timer = setTimeout(() => {
                 setResult('（模擬）：我要辦理存款。');
-                setIsRecording(false);   // 完成辨識後自動停止錄製
             }, 1500);
 
             return () => clearTimeout(timer);
