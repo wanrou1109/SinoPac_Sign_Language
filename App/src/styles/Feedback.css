@@ -1,0 +1,143 @@
+.feedback-screen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    max-width: 834px;
+    max-height: 1194px;
+    margin: 0 auto;
+    background-color: white;
+}
+
+.feedback-container {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 0; /* 移除底部間距 */
+    margin-right: 20px;
+}
+
+.rating-section {
+    margin-bottom: 30px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+/* 滿意度標題和星星在同一行 */
+.rating-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.stars-container {
+    display: flex;
+}
+
+.star {
+    font-size: 40px;
+    margin-right: 15px;
+    cursor: pointer;
+    color: #ddd;
+}
+
+.star.active {
+    color: #ffcd00; /* 點擊後變成黃色 */
+}
+
+.comment-section {
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+/* 評論標題和輸入欄在同一行 */
+.comment-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* 頂部對齊 */
+    width: 100%;
+}
+
+.comment-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-grow: 1;
+}
+
+.comment-input {
+    width: 80%; /* 在行內佈局中調整寬度 */
+    height: 250px;
+    padding: 20px;
+    border-radius: 15px;
+    border: none;
+    background-color: #F0F0F0;
+    font-size: 18px;
+    resize: none;
+}
+
+.submit-button {
+    width: 200px;
+    height: 60px;
+    border-radius: 10px;
+    border: none;
+    background-color: #ddd;
+    color: #333;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 20px auto;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.submit-button:hover {
+    background-color: #ccc;
+}
+
+/* 當評論框有內容時，送出按鈕變藍色 */
+.submit-button.active {
+    background-color: #254A91; /* 藍色 */
+    color: white;
+}
+
+/* iPad 尺寸優化 (834 x 1194) */
+@media (width: 834px) and (height: 1194px) {
+    .feedback-container {
+        padding: 50px;
+    }
+    
+    .section-title {
+        font-size: 28px;
+    }
+    
+    .star {
+        font-size: 45px;
+    }
+    
+    .comment-input {
+        height: 300px;
+        font-size: 20px;
+    }
+    
+    .submit-button {
+        width: 220px;
+        height: 70px;
+        font-size: 22px;
+        margin-top: 30px;
+    }
+}
+
+/* 確保適應不同尺寸的 iPad */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .feedback-container {
+        padding: 30px;
+    }
+}
