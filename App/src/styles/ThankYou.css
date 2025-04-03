@@ -1,0 +1,59 @@
+.thank-you-page {
+    height: 100vh;
+    width: 100%;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.thank-you-frame {
+    width: 834px;
+    height: 457px;
+    background-color: #254A91;
+    border-radius: 20px;
+    border: 4px solid #254A91;
+    padding: 61px 154px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    gap: 10px;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.bank-logo {
+    max-width: 295px;
+    height: auto;
+}
+
+.message-container {
+    text-align: center;
+}
+
+.system-name, .thank-you-message, .welcome-message {
+    font-size: 40px;
+    line-height: 1.2;
+    margin: 10px 0;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* 確保在不同設備上都能正確顯示 */
+@media (max-width: 860px) {
+    .thank-you-frame {
+        width: 90%;
+        height: auto;
+        padding: 40px;
+    }
+    
+    .system-name, .thank-you-message, .welcome-message {
+        font-size: 30px;
+    }
+} 

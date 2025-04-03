@@ -1,0 +1,47 @@
+.conversation-screen {
+    height: 93vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+.conversation-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.action-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    position: relative;
+    margin: 5%;
+    gap: 40px;
+}
+
+.sign-button {
+    background-color: #254A91;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    font-size: 25px;
+    padding: 15px 50px;
+}
+
+.finish-button {
+    background-color: #E42311;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    font-size: 25px;
+    padding: 15px 20px;
+}
+
+.speech-button {
+    background-color: #DDDDDD;
+    color: black;
+    border-radius: 10px;
+    border: none;
+    font-size: 25px;
+    padding: 15px 50px;
+}
