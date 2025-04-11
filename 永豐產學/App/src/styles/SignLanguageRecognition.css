@@ -17,11 +17,6 @@
     flex-direction: column;
 }
 
-.status-indicator {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
 .action-bar {
     display: flex;
     justify-content: center;

@@ -8,8 +8,11 @@ import '../styles/ConversationScreen.css';
 const ConversationScreen = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const{selectedBranch} = location.state || {};
-    const {conversations} = useAppContext();
+    const{ selectedBranch } = location.state || {};
+    const { conversations, editMessage} = useAppContext();
+    const [ editingMessageID, setEditingMessageID ] = useState(null);
+    const [ editingText, setEditingText ] = useState('');
+
 
     // 語音辨識
     const handleSpeechRecognition = () => {
@@ -23,7 +26,23 @@ const ConversationScreen = () => {
 
     // 編輯訊息
     const handleEditMessage = (messageID) => {
-        navigate('/text-editor', {state: {messageID}});
+        const message = conversations.find(msg => msg.id === messageID);
+        setEditingMessageID(messageID);
+        setEditingText(message.text);
+    };
+
+    // 儲存編輯
+    const handleSaveEdit = () => {
+        if (editingMessageID && editingText.trim()) {
+          editMessage(editingMessageID, editingText.trim());
+          setEditingMessageID(null);
+          setEditingText('');
+        }
+    };
+    // 取消編輯  
+    const handleCancelEdit = () => {
+        setEditingMessageID(null);
+        setEditingText('');
     };
 
     // 重新錄製訊息
@@ -46,44 +65,61 @@ const ConversationScreen = () => {
             <Header title = {selectedBranch || '永豐銀行'} showBackButton = {true} />
             <div className='conversation-container'>
                 <div className='message-list'>
-                    {conversations.map((message) => (
-                        <div 
-                        key={message.id} 
-                        className={`message ${message.sender === 'staff' ? 'staff-message' : 'customer-message'}`}
-                        >
-                            {/* 訊息 */}
-                            <div className='message-content'>
-                                <p> {message.text} </p>
+                {conversations.map((message) => {
+                    const isEditing = editingMessageID === message.id;
+
+                    return (
+                    <div
+                        key = { message.id }
+                        className = {`message ${message.sender === 'staff' ? 'staff-message' : 'customer-message'} ${editingMessageID ? (isEditing ? 'editing-message' : 'dimmed-message') : ''}`}
+                    >
+                        {isEditing ? (
+                            <div className ='message-editing'>
+                                <textarea
+                                value = { editingText }
+                                onChange = {(e) => setEditingText(e.target.value)}
+                                autoFocus
+                                />
+                                <div className ='edit-buttons'>
+                                <button onClick = { handleSaveEdit }>確認</button>
+                                <button onClick = { handleCancelEdit }>取消</button>
+                                </div>
                             </div>
-                            <div className='message-actions'>
-                                {/* 編輯按鈕 */}
-                                <button 
-                                className='image-button edit-button'
-                                onClick={() => handleEditMessage(message.id)}
-                                >
-                                    <img src='images/edit.png' width={'25px'}></img>
-                                </button>
-                                {/* 重新錄製按鈕 */}
-                                <button
-                                className='image-button refresh-button'
-                                onClick={() => handleRecordMessage(message.id)}
-                                >
-                                    <img src='images/refresh.png' width={'25px'}></img>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        ) : (
+                            <>
+                                <div className = 'message-content'>
+                                    <p>{ message.text }</p>
+                                </div>
+                                <div className = 'message-actions'>
+                                    <button
+                                        className = 'image-button edit-button'
+                                        onClick = {() => handleEditMessage(message.id)}
+                                    >
+                                        <img src = 'images/edit.png' width='25px' />
+                                    </button>
+                                    <button
+                                        className = 'image-button refresh-button'
+                                        onClick={() => handleRecordMessage(message.id, message.sender)}
+                                    >
+                                        <img src = 'images/refresh.png' width = '25px' />
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    );
+                })}
                 </div>
             </div>
 
             <div className='action-bar'>
-                <button className='sign-button' onClick={handleSignLanguageRecognition}>
+                <button className = 'sign-button' onClick = {handleSignLanguageRecognition}>
                     手語辨識
                 </button>
-                <button className='finish-button' onClick={handleFinishService}>
+                <button className = 'finish-button' onClick = {handleFinishService}>
                     完成業務
                 </button>
-                <button className='speech-button' onClick={handleSpeechRecognition}>
+                <button className = 'speech-button' onClick = {handleSpeechRecognition}>
                     語音辨識
                 </button>
             </div>
