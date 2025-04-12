@@ -5,7 +5,7 @@ import ConversationScreen from './components/ConversationScreen.js';
 import FeedbackScreen from './components/FeedbackScreen.js';
 import ScreenSaver from './components/ScreenSaver.js';
 import SignLanguageRecognition from './components/SignLanguageRecognition.js';
-import SpeechRecognition from './components/SpeechRecognition.js';
+//import SpeechRecognition from './components/SpeechRecognition.js';
 //import TextEditor from './components/TextEditor.js';
 import ThankYouScreen from './components/ThankYouScreen.js';
 import {AppProvider} from './contexts/AppContext.js';
@@ -23,7 +23,6 @@ function App() {
                         <Route path = '/conversation' element = {<ConversationScreen />} />
                         <Route path = '/feedback' element = {<FeedbackScreen />} />
                         <Route path = '/sign-language-recognition' element = {<SignLanguageRecognition />} />
-                        <Route path = '/speech-recognition' element = {<SpeechRecognition />} />
                         <Route path = '/thank-you' element = {<ThankYouScreen />} />
                         <Route path = '*' element = {<Navigate to = '/' replace />} />
                     </Routes>

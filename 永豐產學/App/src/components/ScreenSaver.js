@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/ScreenSaver.css';
 
 const ScreenSaver = () => {
   const navigate = useNavigate();
@@ -13,10 +14,9 @@ const ScreenSaver = () => {
     <div className="screen-saver" onClick={handleScreenClick}>
         <div className="screen-saver-content">
             <div className="bank-logo">
-                <img src="/logo.png" alt="永豐銀行" />
+                <img src="images/SinoPac.jpeg" alt="永豐銀行" />
             </div>
             <div className="touch-instruction">
-                <span className="touch-icon">👆</span>
                 <p>點擊螢幕開始服務</p>
             </div>
         </div>
