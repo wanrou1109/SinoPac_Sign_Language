@@ -98,7 +98,7 @@ const SignLanguageRecognition = () => {
                         autoPlay
                         playsInline
                         muted
-                        className = {isRecording ? 'recording' : ''} 
+                        className = {`${isRecording ? 'recording' : ''} mirror-video`} 
                     /> 
                 </div>
             </div>

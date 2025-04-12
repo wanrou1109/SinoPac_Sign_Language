@@ -111,3 +111,8 @@ video {
     width: 100%;
     display: block;
 }
+
+/* 添加鏡像反轉樣式 */
+.mirror-video {
+    transform: scaleX(-1); /* 水平翻轉，解決鏡像問題 */
+  }
