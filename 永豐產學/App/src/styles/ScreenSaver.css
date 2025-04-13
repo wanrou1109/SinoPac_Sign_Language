@@ -1,0 +1,40 @@
+.screen-saver {
+    height: 93vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-color: #254A91;
+    color: white;
+    cursor: pointer;
+}
+
+.screen-saver-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-size: 30px;
+}
+
+.bank-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.touch-instruction {
+    margin-top: 40px;
+    color: white;
+}
+
+/* 確保在不同設備上都能正確顯示 */
+@media (max-width: 860px) {
+    .screen-saver {
+        width: 90%;
+        height: auto;
+        padding: 40px;
+    }
+} 
