@@ -37,10 +37,10 @@ export const AppProvider = ({ children }) => {
   };
 
   // 編輯現有對話訊息
-  const editMessage = (id, newText) => {
+  const editMessage = (messageID, newText) => {
     setConversations(prev => 
       prev.map(msg => 
-        msg.id === id ? { ...msg, text: newText } : msg
+        msg.id === messageID ? { ...msg, text: newText } : msg
       )
     );
   };
@@ -58,6 +58,7 @@ export const AppProvider = ({ children }) => {
   // 提供的上下文值
   const value = {
     conversations,
+    setConversations,
     currentMessage,
     setCurrentMessage,
     userType,

@@ -30,25 +30,25 @@ const SignLanguageRecognition = () => {
                 }
             } catch (error) {
                 console.error('鏡頭開啟失敗:', error);
+                alert('無法開啟鏡頭，請確認您已授予攝影機存取權限。');
             }
         };
         
         setupCamera();
 
-        // 清理函數（為了釋放鏡頭資源，避免記憶體洩漏和不必要的攝像頭佔用）
+        // 清理函數
         return () => {
-            if(videoRef.current && videoRef.current.srcObject) {
-                const tracks = videoRef.current.srcObject.getTracks();
+            if(streamRef.current) {
+                const tracks = streamRef.current.getTracks();
                 tracks.forEach(track => track.stop());
             }
         };
     }, []);
 
-    // 添加這個新的 useEffect 來測試與後端的連接
+    // 測試與後端的連接
     useEffect(() => {
-        // 測試與後端的連接
         console.log('開始測試與後端的連接...');
-        fetch('http://localhost:5000/api/test')
+        fetch('http://localhost:8080/api/test')
             .then(response => {
                 console.log('收到後端回應:', response.status);
                 return response.json();
@@ -57,10 +57,10 @@ const SignLanguageRecognition = () => {
             .catch(error => console.error('後端連接錯誤:', error));
     }, []);
 
-    // 手語辨識
+    // 手語辨識模擬回應
     useEffect(() => {
         if(isRecording) {
-            // 這裡要連到 API，目前模擬
+            // 模擬手語辨識結果
             const timer = setTimeout(() => {
                 setResult('（模擬）：我要辦理存款。');
             }, 1500);
@@ -71,47 +71,72 @@ const SignLanguageRecognition = () => {
 
     // 開始錄製
     const handleStartRecording = () => {
-        if (!streamRef.current) return;
+        if (!streamRef.current) {
+            alert('鏡頭尚未準備就緒，請稍後再試。');
+            return;
+        }
 
         recordedChuncksRef.current = [];
-        const mediaRecorder = new MediaRecorder(streamRef.current, {
-            mimeType: 'video/webm'
-        });
+        try {
+            const mediaRecorder = new MediaRecorder(streamRef.current, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
 
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                recordedChuncksRef.current.push(event.data);
-            }
-        };
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChuncksRef.current.push(event.data);
+                    console.log(`收到錄製片段: ${event.data.size} 位元組`);
+                }
+            };
 
-        mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.start();
-        setIsRecording(true);
-        setRecognitionStatus('recording');
-        setResult('');
+            mediaRecorderRef.current = mediaRecorder;
+            mediaRecorder.start(1000); // 每秒觸發一次 dataavailable 事件
+            console.log('開始錄製視訊');
+            setIsRecording(true);
+            setRecognitionStatus('recording');
+            setResult('');
+        } catch (error) {
+            console.error('啟動錄製時發生錯誤:', error);
+            alert(`無法開始錄製: ${error.message}`);
+        }
     };
 
     // 停止錄製
     const handleStopRecording = () => {
-        if (!mediaRecorderRef.current) return;
+        if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
+            console.warn('沒有進行中的錄製');
+            return;
+        }
 
+        console.log('停止錄製');
         mediaRecorderRef.current.stop();
         setIsRecording(false);
         setRecognitionStatus('processing');
 
         // 處理錄好的影像
         mediaRecorderRef.current.onstop = async () => {
-            // 創建 Blob 並上傳到後端
-            const blob = new Blob(recordedChuncksRef.current, { type: 'video/webm' });
-
             try {
+                console.log(`錄製完成，共 ${recordedChuncksRef.current.length} 個片段`);
+                if (recordedChuncksRef.current.length === 0) {
+                    throw new Error('未收到任何視訊資料');
+                }
+                
+                // 創建 Blob
+                const blob = new Blob(recordedChuncksRef.current, { type: 'video/webm' });
+                console.log(`視訊檔案大小: ${blob.size} 位元組`);
+                
+                if (blob.size === 0) {
+                    throw new Error('視訊檔案大小為 0');
+                }
+                
+                // 上傳影片
                 await uploadVideoToServer(blob);
-
-                // 處理模擬延遲
+                
+                // 模擬處理延遲
                 setTimeout(() => {
                     setRecognitionStatus('idle');
 
-                    // 編輯 or 新增？
+                    // 編輯或新增訊息
                     if (editMessageID) {
                         editMessage(editMessageID, result);
                     } else {
@@ -119,43 +144,44 @@ const SignLanguageRecognition = () => {
                     }
 
                     // 回 conversation page
-                    navigate('/conversation');
+                    navigate('/conversation', { state: { selectedBranch } });
                 }, 1500);
             } catch (error) {
-                console.error('上傳影像失敗：', error);
+                console.error('處理錄製視訊失敗：', error);
                 setRecognitionStatus('idle');
-                alert('上傳影片失敗，請重試。');
+                alert('處理視訊失敗，請重試: ' + error.message);
             }
         };
     };
 
     // 上傳到後端服務器
     const uploadVideoToServer = async (videoBlob) => {
-        console.log('準備上傳視訊檔案', videoBlob.size);
         const formData = new FormData();
         formData.append('video', videoBlob, 'sign-language-recording.webm');
         
+        console.log('準備上傳視訊檔案');
+        console.log('視訊檔案大小:', videoBlob.size, '位元組');
+        
         try {
-            console.log('開始向伺服器發送請求');
-            const response = await fetch('http://localhost:5000/api/upload-video', {
+            console.log('開始上傳視訊檔案到 /api/upload/video');
+            
+            const response = await fetch('http://localhost:8080/api/upload/video', {
                 method: 'POST',
-                credentials: 'omit', // 嘗試改為 'omit'，避免發送 cookies
-                mode: 'cors', // 明確指定 CORS 模式
                 body: formData,
-                headers: {
-                    // 不要手動設置 Content-Type，讓瀏覽器自動處理
-                    'Accept': 'application/json'
-                }
+                mode: 'cors',
+                credentials: 'omit', // 不發送 cookies
             });
             
             console.log('收到伺服器回應', response.status);
-            const data = await response.json();
-            console.log('伺服器回應數據', data);
             
             if (!response.ok) {
-                throw new Error(data.message || '上傳失敗');
+                const errorText = await response.text();
+                console.error('伺服器回應錯誤:', errorText);
+                throw new Error(`伺服器回應錯誤: ${response.status} ${errorText}`);
             }
             
+            const data = await response.json();
+            console.log('伺服器回應數據', data);
             return data;
         } catch (error) {
             console.error('上傳過程中發生錯誤:', error);
@@ -170,7 +196,7 @@ const SignLanguageRecognition = () => {
         }
         setIsRecording(false);
         setRecognitionStatus('idle');
-        navigate('/conversation');
+        navigate('/conversation', { state: { selectedBranch } });
     };
 
     return (
@@ -209,7 +235,6 @@ const SignLanguageRecognition = () => {
             </div>
         </div>
     );
-
 };
 
 export default SignLanguageRecognition;

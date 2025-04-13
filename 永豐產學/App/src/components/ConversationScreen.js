@@ -9,7 +9,7 @@ const ConversationScreen = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { selectedBranch } = location.state || {};
-    const { conversations, setConversations} = useAppContext();
+    const { conversations, setConversations, editMessage } = useAppContext();
 
     const [ editingMessageID, setEditingMessageID ] = useState(null);
     const [ editingText, setEditingText ] = useState('');
@@ -82,16 +82,10 @@ const ConversationScreen = () => {
     // 儲存編輯
     const handleSaveEdit = () => {
         if (editingMessageID && editingText.trim()) {
-          // 編輯訊息
-          setConversations(prev =>
-            prev.map(msg =>
-                msg.id === editingMessageID
-                ? {...msg, text : editingText.trim()}
-                : msg
-            )
-          );
-          setEditingMessageID(null);
-          setEditingText('');
+            // 編輯訊息
+            editMessage(editingMessageID, editingText.trim());
+            setEditingMessageID(null);
+            setEditingText('');
         }
     };
 
