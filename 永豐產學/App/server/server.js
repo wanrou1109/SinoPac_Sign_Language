@@ -5,9 +5,9 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 8080; // 使用 8080 端口
 
-// 簡單的 CORS 配置
+// 啟用 CORS，允許所有來源
 app.use(cors());
 
 // 解析 JSON 請求體
@@ -34,6 +34,11 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+});
+
+// 添加根路徑處理
+app.get('/', (req, res) => {
+  res.send('手語辨識伺服器運行中 - API 端點: /api/test 和 /api/upload/video');
 });
 
 // 測試路由
@@ -68,4 +73,5 @@ app.post('/api/upload/video', upload.single('video'), function(req, res) {
 // 啟動服務器
 app.listen(PORT, function() {
   console.log(`伺服器運行在 http://localhost:${PORT}`);
+  console.log(`API 測試端點: http://localhost:${PORT}/api/test`);
 });

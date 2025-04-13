@@ -48,7 +48,7 @@ const SignLanguageRecognition = () => {
     // 測試與後端的連接
     useEffect(() => {
         console.log('開始測試與後端的連接...');
-        fetch('http://localhost:5000/api/test')
+        fetch('http://localhost:8080/api/test')
             .then(response => {
                 console.log('收到後端回應:', response.status);
                 return response.json();
@@ -165,7 +165,7 @@ const SignLanguageRecognition = () => {
         try {
             console.log('開始上傳視訊檔案到 /api/upload/video');
             
-            const response = await fetch('http://localhost:5000/api/upload/video', {
+            const response = await fetch('http://localhost:8080/api/upload/video', {
                 method: 'POST',
                 body: formData,
                 mode: 'cors',
