@@ -24,14 +24,21 @@
     display: flex;
     margin-bottom: 10px;
     max-width: 60%;
+    box-sizing: border-box;
 }
   
 .staff-message {
-    align-self: flex-start;
+    align-self: flex-end;
+    margin-left: auto;  /* 靠右 */
+    display: flex;
+    flex-direction: row-reverse; /* 反向排列，先文字，後按鈕 */
 }
 
 .customer-message {
-    align-self: flex-end;
+    align-self: flex-start;
+    margin-right: auto; /* 靠左 */
+    display: flex;
+    flex-direction: row; /* 正常排列，先按鈕，後文字 */
 }
 
 .message-content {
@@ -68,13 +75,26 @@
 }
 
 /* 正在編輯的訊息 */
-.message-editing textarea {
+.customer-message .message-editing textarea {
     width: 100%;
     background-color: #254A91;
     color: white;
     border: none;
     border-radius: 12px;
     border-top-left-radius: 0;
+    padding: 8px 10px;
+    resize: none;
+    font-size: 18px;
+    font-family: inherit;
+}
+
+.staff-message .message-editing textarea {
+    width: 100%;
+    background-color: #f0f0f0;
+    color: black; 
+    border: none;
+    border-radius: 12px;
+    border-top-right-radius: 0; 
     padding: 8px 10px;
     resize: none;
     font-size: 18px;
@@ -88,7 +108,20 @@
 }
 
 .message-editing {
+    width: 70%;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
     opacity: 1 !important;
+    box-sizing: border-box;
+}
+
+.message-editing textarea {
+    min-height: 50px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .image-button {
