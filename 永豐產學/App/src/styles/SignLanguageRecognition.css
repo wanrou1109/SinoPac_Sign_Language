@@ -79,7 +79,6 @@
     width: calc(100% - 32px);
     height: calc(100% - 32px);
     background-color: #E42311;
-    animation: pulse 1.5s infinite;
 }
 
 /* 按鈕被禁用時的樣式 */

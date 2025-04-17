@@ -201,7 +201,7 @@ const SignLanguageRecognition = () => {
 
     return (
         <div className='sign-language-recognition-screen'>
-            <Header title = {selectedBranch || '永豐銀行'} showBackButton = {handleCancel} />
+            <Header title = {selectedBranch || '手語／語音辨識系統'} showBackButton = {handleCancel} />
 
             <div className='recognition-container'>
                 <div className='video-container'>
