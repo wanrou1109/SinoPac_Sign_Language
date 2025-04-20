@@ -3,9 +3,11 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 const app = express();
 const PORT = 8080; // 使用 8080 端口
+const pythonPath = process.env.PYTHON_PATH || 'python3';
 
 // 啟用 CORS，允許所有來源
 app.use(cors());
@@ -66,6 +68,67 @@ app.post('/api/upload/video', upload.single('video'), function(req, res) {
       path: req.file.path,
       size: req.file.size,
       mimetype: req.file.mimetype || '未知'
+    }
+  });
+});
+
+// 語音辨識 API 端點
+app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
+  console.log('收到語音辨識請求');
+  
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: '未接收到音頻文件'
+    });
+  }
+  
+  console.log('音頻文件信息:', req.file);
+  
+  // 呼叫 Python 進行語音辨識
+  const pythonProcess = spawn(pythonPath, [
+    path.join(__dirname, 'speech_recognition', 'speech_to_text.py'), 
+    req.file.path
+  ]);
+  
+  let result = '';
+  let error = '';
+  
+  pythonProcess.stdout.on('data', (data) => {
+    result += data.toString();
+  });
+  
+  pythonProcess.stderr.on('data', (data) => {
+    error += data.toString();
+    console.error(`Python 錯誤: ${data}`);
+  });
+  
+  pythonProcess.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`Python 進程退出，代碼: ${code}`);
+      return res.status(500).json({
+        success: false,
+        message: '語音辨識處理錯誤',
+        error: error
+      });
+    }
+    
+    try {
+      // 解析 JSON 輸出
+      const transcription = JSON.parse(result);
+      return res.status(200).json({
+        success: true,
+        text: transcription.text,
+        signLanguage: transcription.signLanguage
+      });
+    } catch (e) {
+      console.error('無法解析 Python 輸出:', e);
+      return res.status(500).json({
+        success: false,
+        message: '處理 Python 輸出時發生錯誤',
+        error: e.message,
+        rawOutput: result
+      });
     }
   });
 });

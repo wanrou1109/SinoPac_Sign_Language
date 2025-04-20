@@ -17,6 +17,7 @@ const ConversationScreen = () => {
     const [ isSpeechRecording, setIsSpeechRecording ] = useState(false);
     const [ transcriptText, setTranscriptText ] = useState('');
     const [isRecordingActive, setIsRecordingActive] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState(null);
     const [replacingMessageID, setReplacingMessageID] = useState(null);
 
 
@@ -76,66 +77,96 @@ const ConversationScreen = () => {
     };
 
     // 開始錄音
-    const startRecording = () => {
+    const startRecording = async () => {
         setIsRecordingActive(true);
         console.log('開始語音錄音...');
 
-        // 模擬實時更新文字
-        const mockTexts = [
-            '你好，請問',
-            '你好，請問您今天',
-            '你好，請問您今天想辦理',
-            '您好，請問您今天想辦理什麼業務呢？'
-        ];
+        try {
+            // request 麥克風
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        // 清除任何可能存在的先前模擬計時器
-        if (window.speechSimInterval) clearInterval(window.speechSimInterval);
+            const recorder = new MediaRecorder(stream);
+            const audioChunks = [];
 
-        let index = 0;
-        window.speechSimInterval = setInterval(() => {
-            if (index < mockTexts.length) {
-                setTranscriptText(mockTexts[index]);
-                index++;
-            } else {
-                clearInterval(window.speechSimInterval);
-            }
-        }, 1000);
+            // 收集音訊數據
+            recorder.ondataavailable = e => {
+                if (e.data.size > 0) {
+                    audioChunks.push(e.data);
+                    console.log('收集音頻數據:', e.data.size, 'bytes');
+                }
+            };
+
+            // 設置錄音完成處理
+            recorder.onstop = async () => {
+                console.log('錄音停止，收集了', audioChunks.length, '個音頻塊');
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                console.log('創建音頻 Blob:', audioBlob.size, 'bytes');
+                // 加載中
+                setTranscriptText('處理中...');
+                // 送到後端
+                await processAudioWithWhisper(audioBlob);
+                // 停止所有音訊軌道
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            // 開始錄音
+            recorder.start(1000);
+
+            // 保存 recorder 參考，以便稍後停止
+            setMediaRecorder(recorder);
+        } catch (error) {
+            console.error('開始錄音時發生錯誤：', error);
+            setIsRecordingActive(false);
+            alert('無法啟動麥克風，請確認是否授予麥克風權限。');
+        }
     }; 
+
+    const processAudioWithWhisper = async (audioBlob) => {
+        try {
+            if (!audioBlob || !(audioBlob instanceof Blob)) {
+                throw new Error('無效的音頻數據');
+            }
+            
+            console.log('處理音頻 Blob:', audioBlob.size, 'bytes');
+
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+
+            // 送到後端
+            const response = await fetch('http://localhost:8080/api/speech-recognition', {
+                method: 'POST',
+                body: formData,
+                mode: 'cors',
+                credentials: 'omit'
+            });
+
+            if (!response.ok) {
+                throw new Error(`伺服器回應錯誤： ${ response.status }`);
+            }
+
+            // 處理回應
+            const result = await response.json();
+
+            if (result.success) {
+                setTranscriptText(result.text);
+            } else {
+                console.error('語音辨識失敗：', result.error);
+                setTranscriptText('語音辨識失敗，請重試。');
+            }
+        } catch (error) {
+            console.error('發生音訊時發生錯誤：', error);
+            setTranscriptText('處理音訊時發生錯誤，請重試。');
+        }
+    };
 
     // 停止錄音並添加結果到對話中
     const stopRecordingAndAddToChat = () => {
-        // 停止錄音
-        if (window.speechSimInterval) clearInterval(window.speechSimInterval);
-        
-        console.log('停止語音錄音並添加到對話...');
-        
-        // 當前辨識結果添加到對話中
-        if (transcriptText.trim()) {
-            const newMessage = {
-                id: replacingMessageID || Date.now(),  // 如果是替換，使用原訊息 ID
-                text: transcriptText,
-                sender: 'staff',
-                timestamp: new Date().toISOString()  
-            };
-    
-            if (replacingMessageID) {
-                // 替換現有訊息
-                setConversations(prev => 
-                    prev.map(msg => 
-                        msg.id === replacingMessageID ? newMessage : msg
-                    )
-                );
-                // 清除替換 ID
-                setReplacingMessageID(null);
-            } else {
-                // 添加新訊息
-                setConversations(prev => [...prev, newMessage]);
-            }
+        // 停止 MediaRecorder
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
         }
-    
-        // 重置錄音狀態
+        //  實際訊息添加在 processAudioWithWhisper 成功處理後進行，因此只需設定狀態
         setIsRecordingActive(false);
-        setIsSpeechRecording(false);
     };
 
     // 手語辨識
