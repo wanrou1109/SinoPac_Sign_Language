@@ -129,8 +129,12 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
         const jsonString = result.substring(startIndex + startMarker.length, endIndex).trim();
         console.log('提取的JSON字符串:', jsonString);
         
-        const transcription = JSON.parse(jsonString);
-        return res.status(200).json(transcription);
+        const transcription = JSON.parse(result);
+        return res.status(200).json({
+          success: true,
+          text: transcription.text,
+          signLanguage: transcription.signLanguage
+        });
       } else {
         console.error('未找到JSON標記');
         return res.status(500).json({
