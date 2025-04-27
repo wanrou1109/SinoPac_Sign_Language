@@ -7,14 +7,16 @@ import os
 from scipy.io import wavfile
 import re
 import difflib
+import sys
+import json
 
 class AudioTranscriber:
     def __init__(self, dictionary_file="sign_language_dic.txt"):
         # 初始化繁體轉換器
         self.converter = opencc.OpenCC('s2t')  # 簡體轉繁體
         # 載入whisper模型
-        print("正在載入模型...")
-        self.model = whisper.load_model("small")
+        sys.stderr.write("正在載入模型...\n")  # 使用stderr而不是print
+        self.model = whisper.load_model("tiny")
         # 錄音設定
         self.samplerate = 16000  # Whisper 要求16kHz
         self.channels = 1        # 單聲道
@@ -86,56 +88,59 @@ class AudioTranscriber:
                 "手語": sign_language_text
             }
         except Exception as e:
-            print(f"轉錄時發生錯誤: {str(e)}")
+            # 不要使用print輸出錯誤，而是記錄到stderr
+            sys.stderr.write(f"轉錄時發生錯誤: {str(e)}\n")
             return None
 
-    def cleanup(self, temp_file):
-        """清理臨時文件"""
-        try:
-            os.unlink(temp_file)
-        except Exception as e:
-            print(f"清理臨時文件時發生錯誤: {str(e)}")
-
 def main():
-    transcriber = AudioTranscriber()  # 可在此指定字典檔案路徑，如 AudioTranscriber("my_dict.txt")
-    
-    while True:
-        try:
-            print("\n=== 語音轉文字系統 ===")
-            print("1. 開始錄音（8秒）")
-            print("2. 退出")
-            choice = input("請選擇操作 (1/2): ")
+    try:
+        # 獲取腳本所在的目錄
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 構建字典檔案的路徑
+        dict_path = os.path.join(script_dir, 'sign_language_dic.txt')
+        
+        # 所有非JSON輸出都寫入stderr
+        sys.stderr.write(f"使用字典檔案: {dict_path}\n")
+        
+        # 初始化轉錄器
+        transcriber = AudioTranscriber(dict_path)
+        
+        # 檢查是否有命令行參數
+        if len(sys.argv) > 1:
+            audio_file_path = sys.argv[1]
+            sys.stderr.write(f"處理音頻檔案: {audio_file_path}\n")
             
-            if choice == "1":
-                # 錄音
-                recording = transcriber.record_audio()
-                # 保存音頻
-                temp_file = transcriber.save_audio(recording)
-                if temp_file is None:
-                    continue
-                # 轉錄
-                print("正在轉錄...")
-                result = transcriber.transcribe_audio(temp_file)
-                # 顯示結果
-                if result:
-                    print("\n轉錄結果:")
-                    print(result["繁體"])
-                    print("\n手語轉錄結果:")
-                    print(result["手語"])
-                # 清理臨時檔案
-                transcriber.cleanup(temp_file)
-                
-            elif choice == "2":
-                print("感謝使用！")
-                break
+            # 轉錄
+            result = transcriber.transcribe_audio(audio_file_path)
+            
+            # 輸出結果為JSON，包括失敗情況
+            if result:
+                # 只輸出一行JSON到stdout
+                print(json.dumps({
+                    "success": True,
+                    "text": result["繁體"],
+                    "signLanguage": result["手語"]
+                }, ensure_ascii=False))
             else:
-                print("無效的選擇，請重試。")
-                
-        except KeyboardInterrupt:
-            print("\n程式已被使用者中斷")
-            break
-        except Exception as e:
-            print(f"發生錯誤: {str(e)}")
+                # 轉錄失敗也輸出JSON
+                print(json.dumps({
+                    "success": False,
+                    "error": "轉錄失敗"
+                }, ensure_ascii=False))
+        else:
+            # 缺少參數時輸出JSON錯誤
+            print(json.dumps({
+                "success": False,
+                "error": "未提供音頻檔案路徑"
+            }, ensure_ascii=False))
+    except Exception as e:
+        # 捕獲所有可能的異常並輸出為JSON
+        sys.stderr.write(f"處理過程中發生錯誤: {str(e)}\n")
+        print(json.dumps({
+            "success": False,
+            "error": f"處理過程中發生錯誤: {str(e)}"
+        }, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()

@@ -36,7 +36,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+  //limits: { fileSize: 100 * 1024 * 1024 } // 100MB
 });
 
 // 創建 feedback schema
@@ -110,32 +110,40 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
   
   pythonProcess.stderr.on('data', (data) => {
     error += data.toString();
-    console.error(`Python 錯誤: ${data}`);
+    console.error(`${data}`);
   });
   
   pythonProcess.on('close', (code) => {
-    if (code !== 0) {
-      console.error(`Python 進程退出，代碼: ${code}`);
-      return res.status(500).json({
-        success: false,
-        message: '語音辨識處理錯誤',
-        error: error
-      });
-    }
+    console.log(`Python 進程退出，代碼: ${code}`);
     
     try {
-      // 解析 JSON 輸出
-      const transcription = JSON.parse(result);
-      return res.status(200).json({
-        success: true,
-        text: transcription.text,
-        signLanguage: transcription.signLanguage
-      });
+      // 使用標記查找JSON部分
+      const startMarker = "JSON_RESULT_START";
+      const endMarker = "JSON_RESULT_END";
+      
+      const startIndex = result.indexOf(startMarker);
+      const endIndex = result.indexOf(endMarker);
+      
+      if (startIndex !== -1 && endIndex !== -1) {
+        // 提取標記之間的JSON字符串
+        const jsonString = result.substring(startIndex + startMarker.length, endIndex).trim();
+        console.log('提取的JSON字符串:', jsonString);
+        
+        const transcription = JSON.parse(jsonString);
+        return res.status(200).json(transcription);
+      } else {
+        console.error('未找到JSON標記');
+        return res.status(500).json({
+          success: false,
+          message: '未找到有效的輸出結果',
+          rawOutput: result
+        });
+      }
     } catch (e) {
-      console.error('無法解析 Python 輸出:', e);
+      console.error('處理Python輸出時發生錯誤:', e);
       return res.status(500).json({
         success: false,
-        message: '處理 Python 輸出時發生錯誤',
+        message: '處理Python輸出時發生錯誤',
         error: e.message,
         rawOutput: result
       });
