@@ -30,8 +30,17 @@ class AudioTranscriber:
         if not os.path.exists(file_path):
             print(f"字典檔案 {file_path} 不存在！請先建立此檔案。")
             return dictionary
-        with open(file_path, "r", encoding="utf-8") as f:
-            for line in f:
+        try:
+            # 嘗試開啟並讀取檔案
+            with open(file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                
+            # 記錄檔案行數
+            sys.stderr.write(f"成功讀取字典檔案: {file_path}\n")
+            sys.stderr.write(f"檔案共有 {len(lines)} 行\n")
+            
+            # 解析檔案內容
+            for line in lines:
                 line = line.strip()
                 if not line:
                     continue  # 略過空行
@@ -39,6 +48,22 @@ class AudioTranscriber:
                     continue  # 略過格式不正確的行
                 key, value = line.split("->", 1)
                 dictionary[key.strip()] = value.strip()
+            
+            # 記錄字典大小和一些範例
+            sys.stderr.write(f"成功建立字典，共 {len(dictionary)} 個對應項\n")
+            
+            # 顯示前三個項目作為範例
+            count = 0
+            for key, value in dictionary.items():
+                if count < 3:
+                    sys.stderr.write(f"字典項目範例: '{key}' -> '{value}'\n")
+                    count += 1
+                else:
+                    break
+                    
+        except Exception as e:
+            sys.stderr.write(f"讀取字典檔案時發生錯誤: {str(e)}\n")
+        
         return dictionary
 
     def record_audio(self, duration=8):
