@@ -5,8 +5,10 @@ import '../styles/Feedback.css';
 
 const FeedbackScreen = () => {
     const navigate = useNavigate();
-    const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState('');
+    const [ rating, setRating ] = useState(0);
+    const [ comment, setComment ] = useState('');
+    const [ isSubmitting, setIsSubmitting ] = useState(false);
+    const [ errorMessage, setErrorMessage ] = useState('');
 
     // 處理星星評分
     const handleStarClick = (starIndex) => {
@@ -19,12 +21,38 @@ const FeedbackScreen = () => {
     };
 
     // 處理表單提交
-    const handleSubmit = () => {
-        // 這裡可以添加提交評分和評論的邏輯
-        console.log('提交評分:', rating, '評論:', comment);
+    const handleSubmit = async () => {
+        if (!isButtonActive) return;
 
-        // 提交後導航到感謝頁面
-        navigate('/thank-you');
+        setIsSubmitting(true);
+        setErrorMessage('');
+
+        try {
+            const response = await fetch('http://localhost:8080/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rating,
+                    comment
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || '提交回饋時發生錯誤');
+            }
+
+            console.log('提交回饋成功', data);
+            navigate('/thank-you');
+        } catch (error) {
+            console.error('提交回饋時發生錯誤：', error);
+            setErrorMessage('提交回饋時發生錯誤，請稍後再試');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // 處理返回按鈕點擊
@@ -71,11 +99,16 @@ const FeedbackScreen = () => {
                     </div>
                 </div>
 
+                {errorMessage && (
+                    <div className="error-message">{errorMessage}</div>
+                )}
+
                 <button 
                     className={`submit-button ${isButtonActive ? 'active' : ''}`} 
                     onClick={handleSubmit}
+                    disabled={!isButtonActive || isSubmitting}
                 >
-                    送出
+                    {isSubmitting ? '提交中...' : '送出'}
                 </button>
             </div>
         </div>

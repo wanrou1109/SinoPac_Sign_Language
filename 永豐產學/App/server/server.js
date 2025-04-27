@@ -3,11 +3,14 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
+const mongoose = require('mongoose');
 
 const app = express();
-const PORT = 8080; // 使用 8080 端口
+const PORT = 8080;
+const pythonPath = process.env.PYTHON_PATH || 'python3';
 
-// 啟用 CORS，允許所有來源
+// 啟用 CORS
 app.use(cors());
 
 // 解析 JSON 請求體
@@ -35,6 +38,15 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB
 });
+
+// 創建 feedback schema
+const feedbackSchema = new mongoose.Schema({
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  comment: { type: String, required: true },
+  createdAt: {type: Date, default: Date.now }
+});
+
+const Feedback = mongoose.model('Feedback', feedbackSchema);
 
 // 添加根路徑處理
 app.get('/', (req, res) => {
@@ -70,8 +82,140 @@ app.post('/api/upload/video', upload.single('video'), function(req, res) {
   });
 });
 
-// 啟動服務器
-app.listen(PORT, function() {
-  console.log(`伺服器運行在 http://localhost:${PORT}`);
-  console.log(`API 測試端點: http://localhost:${PORT}/api/test`);
+// 語音辨識 API 端點
+app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
+  console.log('收到語音辨識請求');
+  
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: '未接收到音頻文件'
+    });
+  }
+  
+  console.log('音頻文件信息:', req.file);
+  
+  // 呼叫 Python 進行語音辨識
+  const pythonProcess = spawn(pythonPath, [
+    path.join(__dirname, 'speech_recognition', 'speech_to_text.py'), 
+    req.file.path
+  ]);
+  
+  let result = '';
+  let error = '';
+  
+  pythonProcess.stdout.on('data', (data) => {
+    result += data.toString();
+  });
+  
+  pythonProcess.stderr.on('data', (data) => {
+    error += data.toString();
+    console.error(`Python 錯誤: ${data}`);
+  });
+  
+  pythonProcess.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`Python 進程退出，代碼: ${code}`);
+      return res.status(500).json({
+        success: false,
+        message: '語音辨識處理錯誤',
+        error: error
+      });
+    }
+    
+    try {
+      // 解析 JSON 輸出
+      const transcription = JSON.parse(result);
+      return res.status(200).json({
+        success: true,
+        text: transcription.text,
+        signLanguage: transcription.signLanguage
+      });
+    } catch (e) {
+      console.error('無法解析 Python 輸出:', e);
+      return res.status(500).json({
+        success: false,
+        message: '處理 Python 輸出時發生錯誤',
+        error: e.message,
+        rawOutput: result
+      });
+    }
+  });
+});
+
+// feedback API 端點
+app.post('/api/feedback', async(req, res) => {
+  try {
+    const { rating, comment } = req.body;
+
+    console.log('收到回饋數據:', { rating, comment });
+
+    if (!rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: '滿意度和評論為必填欄位'
+      });
+    }
+
+    // 創建 new 回饋紀錄
+    const feedback = new Feedback({
+      rating, 
+      comment
+    });
+
+    // save
+    const savedFeedback = await feedback.save();
+    console.log('回饋保存成功:', savedFeedback);
+
+    return res.status(201).json({
+      success: true,
+      message: '回饋提交成功',
+      feedback: {
+        id: feedback._id,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        createdAt: feedback.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('處理回饋時發生錯誤：', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器處理回饋時發生錯誤'
+    });
+  } 
+});
+
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    console.log(`找到 ${feedbacks.length} 條回饋`);
+    res.json({
+      success: true,
+      count: feedbacks.length,
+      data: feedbacks
+    });
+  } catch (error) {
+    console.error('獲取回饋時出錯:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取回饋時出錯'
+    });
+  }
+});
+
+// 先連接到 MongoDB，然後再啟動服務器
+mongoose.connect('mongodb://localhost:27017/SignLanguageApp', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('成功連接 MongoDB');
+  
+  // 資料庫連接成功後啟動服務器
+  app.listen(PORT, function() {
+    console.log(`伺服器運行在 http://localhost:${PORT}`);
+    console.log(`API 測試端點: http://localhost:${PORT}/api/test`);
+  });
+}).catch(err => {
+  console.error('MongoDB 連接錯誤:', err);
 });
