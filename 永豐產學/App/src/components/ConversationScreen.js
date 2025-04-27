@@ -123,39 +123,53 @@ const ConversationScreen = () => {
 
     const processAudioWithWhisper = async (audioBlob) => {
         try {
-            if (!audioBlob || !(audioBlob instanceof Blob)) {
-                throw new Error('無效的音頻數據');
-            }
-            
-            console.log('處理音頻 Blob:', audioBlob.size, 'bytes');
-
+            console.log('正在發送 API 請求到:', 'http://localhost:8080/api/speech-recognition');
+            console.log('音頻大小:', audioBlob.size, 'bytes');
+    
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.wav');
-
-            // 送到後端
+            console.log('FormData 建立: ', formData.has('audio'));
+            
+            // 使用 fetch 發送請求
             const response = await fetch('http://localhost:8080/api/speech-recognition', {
                 method: 'POST',
-                body: formData,
-                mode: 'cors',
-                credentials: 'omit'
+                body: formData
             });
-
+            
             if (!response.ok) {
-                throw new Error(`伺服器回應錯誤： ${ response.status }`);
+                throw new Error(`伺服器回應錯誤: ${response.status}`);
             }
-
-            // 處理回應
+            
             const result = await response.json();
-
+            
             if (result.success) {
-                setTranscriptText(result.text);
+                setTranscriptText(result.signLanguage);
+            
+                if (replacingMessageID) {
+                    // 編輯訊息
+                    editMessage(replacingMessageID, result.signLanguage);
+                    setReplacingMessageID(null);
+                } else {
+                    // 添加新訊息到對話中
+                    const newMessage = {
+                        id: Date.now().toString(),
+                        text: result.signLanguage,
+                        sender: 'staff',
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    setConversations(prev => [...prev, newMessage]);
+                }
+
+                setIsSpeechRecording(false);
+
             } else {
-                console.error('語音辨識失敗：', result.error);
+                console.error('語音辨識失敗:', result.error);
                 setTranscriptText('語音辨識失敗，請重試。');
             }
         } catch (error) {
-            console.error('發生音訊時發生錯誤：', error);
-            setTranscriptText('處理音訊時發生錯誤，請重試。');
+            console.error('處理音頻時發生錯誤:', error);
+            setTranscriptText('處理音頻時發生錯誤，請重試。');
         }
     };
 
@@ -290,11 +304,8 @@ const ConversationScreen = () => {
                                     正在錄音中...
                                 </>
                             ) : (
-                                '準備錄音...'
+                                transcriptText ? transcriptText : '準備錄音...'
                             )}
-                        </div>
-                        <div className='transcript-preview'>
-                            {transcriptText || '等待語音輸入...'}
                         </div>
                     </div>
                 )}
