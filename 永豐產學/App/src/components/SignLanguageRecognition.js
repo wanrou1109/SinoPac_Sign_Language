@@ -154,40 +154,65 @@ const SignLanguageRecognition = () => {
         };
     };
 
-    // 上傳到後端服務器
     const uploadVideoToServer = async (videoBlob) => {
         const formData = new FormData();
         formData.append('video', videoBlob, 'sign-language-recording.webm');
-        
+    
         console.log('準備上傳視訊檔案');
         console.log('視訊檔案大小:', videoBlob.size, '位元組');
-        
+    
         try {
             console.log('開始上傳視訊檔案到 /api/upload/video');
-            
+    
             const response = await fetch('http://localhost:8080/api/upload/video', {
                 method: 'POST',
                 body: formData,
                 mode: 'cors',
-                credentials: 'omit', // 不發送 cookies
+                credentials: 'omit',
             });
-            
+    
             console.log('收到伺服器回應', response.status);
-            
+    
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('伺服器回應錯誤:', errorText);
                 throw new Error(`伺服器回應錯誤: ${response.status} ${errorText}`);
             }
-            
+    
             const data = await response.json();
             console.log('伺服器回應數據', data);
+    
+            // ✅ 上傳成功後自動觸發分析最新影片
+            await analyzeLatestVideo();
+    
             return data;
         } catch (error) {
             console.error('上傳過程中發生錯誤:', error);
             throw error;
         }
     };
+    
+    // 🔁 呼叫 /api/analyze_latest 並將結果設定給前端
+    const analyzeLatestVideo = async () => {
+        try {
+            console.log('呼叫 /api/analyze_latest 進行辨識...');
+            const response = await fetch('http://localhost:8080/api/analyze_latest');
+            const data = await response.json();
+    
+            if (response.ok) {
+                const sentence = data.result.join(' ');
+                setResult(sentence);
+                console.log('分析結果:', sentence);
+            } else {
+                console.error('分析錯誤:', data.error);
+                setResult(`錯誤：${data.error}`);
+            }
+        } catch (error) {
+            console.error('辨識 API 呼叫失敗:', error);
+            setResult('辨識過程發生錯誤');
+        }
+    };
+    
 
     // 取消 and 返回
     const handleCancel = () => {
