@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext.js';
 import Header from './Header.js';
 import '../styles/SignLanguageRecognition.css';
-import { response } from 'express';
 
 const SignLanguageRecognition = () => {
     const navigate = useNavigate();
@@ -16,7 +15,6 @@ const SignLanguageRecognition = () => {
     const recordedChuncksRef = useRef([]);
     const streamRef = useRef(null);
     const editMessageID = location.state?.messageID;
-    const { selectedBranch } = location.state || {};
 
     // 模擬鏡頭啟動
     useEffect(() => {
@@ -60,42 +58,70 @@ const SignLanguageRecognition = () => {
 
     // 手語辨識模擬回應
     useEffect(() => {
-        if(isRecording) {
+        let timer;
+        
+        // 當錄影停止且有視頻 URL 時，開始處理辨識
+        if (!isRecording && videoURL) {
+            // 設置狀態為處理中
             setResult('處理中...');
-
-            // 發送請求到 app.py
-            fetch('http://localhost:8080/api/analyze_latest', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'appliation/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('網路回應不正常');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // API 回傳的結果
-                console.log(data);
-
-                // 使用 API 返回的句子
-                if (data.sentence) {
-                    setResult(data.science);
-                } else if (data.raw_words && data.raw_words.length > 0){
-                    // 如果沒有句子但有原始辨識詞彙，則顯示原始詞彙
-                    setResult(data.raw_words.join(' '));
-                } else {
-                    setResult('抱歉，無法辨識手語內容');
-                }
-            })
-            .catch(error => {
-                console.error('取得手語辨識結果時發生錯誤:', error);
-                setResult('辨識過程發生錯誤，請重試');
-            })
+            
+            // 給伺服器一點時間處理視頻
+            timer = setTimeout(() => {
+                // 發送請求到手語辨識 API
+                fetch('http://localhost:8080/api/analyze_latest')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('網路回應不正常');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 記錄 API 回傳結果
+                        console.log('手語辨識結果:', data);
+                        
+                        // 獲取辨識文字結果（API 會回傳 result 陣列）
+                        if (data.result && data.result.length > 0) {
+                            // 將結果數組轉換為句子
+                            const recognizedText = data.result.join(' ');
+                            
+                            // 更新顯示結果
+                            setResult(recognizedText);
+                            
+                            // 檢查是否需要更新現有訊息
+                            if (location.state && location.state.messageID) {
+                                // 更新現有訊息
+                                editMessage(location.state.messageID, recognizedText);
+                            } else {
+                                // 添加新訊息
+                                const newMessage = {
+                                    id: Date.now().toString(),
+                                    text: recognizedText,
+                                    sender: 'customer', 
+                                    timestamp: new Date().toISOString()
+                                };
+                                setConversations(prev => [...prev, newMessage]);
+                            }
+                            
+                            // 辨識完成後返回對話頁面
+                            navigate('/conversation');
+                        } else {
+                            // 沒有識別結果
+                            setResult('無法辨識手語內容');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('取得手語辨識結果時發生錯誤:', error);
+                        setResult('辨識過程發生錯誤，請重試');
+                    });
+            }, 1000); 
         }
-    }, [isRecording]);
+        
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [isRecording, videoURL, navigate, location, editMessage, setConversations]);
 
     // 開始錄製
     const handleStartRecording = () => {
@@ -220,10 +246,9 @@ const SignLanguageRecognition = () => {
         }
     };
     
-    // 🔁 呼叫 /api/analyze_latest 並將結果設定給前端
+    // call /api/analyze_latest
     const analyzeLatestVideo = async () => {
         try {
-            console.log('呼叫 /api/analyze_latest 進行辨識...');
             const response = await fetch('http://localhost:8080/api/analyze_latest');
             const data = await response.json();
     
@@ -254,7 +279,7 @@ const SignLanguageRecognition = () => {
 
     return (
         <div className='sign-language-recognition-screen'>
-            <Header title = {selectedBranch || '手語／語音辨識系統'} showBackButton = {handleCancel} />
+            <Header showBackButton = {handleCancel} />
 
             <div className='recognition-container'>
                 <div className='video-container'>

@@ -240,7 +240,7 @@ const ConversationScreen = () => {
 
     return (
         <div className='conversation-screen'>
-            <Header title = {selectedBranch || '手語／語音辨識系統'} showBackButton = {true} />
+            <Header showBackButton = {true} />
             <div className='conversation-container'>
                 <div className='message-list'>
                     {conversations.map((message, index) => {

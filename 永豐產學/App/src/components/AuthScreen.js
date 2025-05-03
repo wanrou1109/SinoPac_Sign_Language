@@ -14,7 +14,9 @@ const AuthScreen = () => {
 
     return (
         <div className='auth-container'>
-            <Header title='手語 / 語音辨識系統' />
+            <div className='title'>
+                <h1>手語 / 語音辨識系統</h1>
+            </div>
 
             <button 
                 className='start-button'
