@@ -143,17 +143,18 @@ const ConversationScreen = () => {
             const result = await response.json();
             
             if (result.success) {
-                setTranscriptText(result.signLanguage);
+                setTranscriptText(result.text);
             
                 if (replacingMessageID) {
                     // 編輯訊息
-                    editMessage(replacingMessageID, result.signLanguage);
+                    editMessage(replacingMessageID, result.text);
                     setReplacingMessageID(null);
                 } else {
                     // 添加新訊息到對話中
+                    // 如果 result.text 改成 result.signLanguage 就會是手語語序
                     const newMessage = {
                         id: Date.now().toString(),
-                        text: result.signLanguage,
+                        text: result.text,
                         sender: 'staff',
                         timestamp: new Date().toISOString()
                     };

@@ -56,7 +56,7 @@ const SignLanguageRecognition = () => {
             .catch(error => console.error('後端連接錯誤:', error));
     }, []);
 
-    // 手語辨識模擬回應
+    // 手語辨識回應
     useEffect(() => {
         let timer;
         
