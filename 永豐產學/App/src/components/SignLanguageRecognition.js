@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext.js';
 import Header from './Header.js';
 import '../styles/SignLanguageRecognition.css';
+import { response } from 'express';
 
 const SignLanguageRecognition = () => {
     const navigate = useNavigate();
@@ -60,12 +61,39 @@ const SignLanguageRecognition = () => {
     // 手語辨識模擬回應
     useEffect(() => {
         if(isRecording) {
-            // 模擬手語辨識結果
-            const timer = setTimeout(() => {
-                setResult('（模擬）：我要辦理存款。');
-            }, 1500);
+            setResult('處理中...');
 
-            return () => clearTimeout(timer);
+            // 發送請求到 app.py
+            fetch('http://localhost:8080/api/analyze_latest', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'appliation/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('網路回應不正常');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // API 回傳的結果
+                console.log(data);
+
+                // 使用 API 返回的句子
+                if (data.sentence) {
+                    setResult(data.science);
+                } else if (data.raw_words && data.raw_words.length > 0){
+                    // 如果沒有句子但有原始辨識詞彙，則顯示原始詞彙
+                    setResult(data.raw_words.join(' '));
+                } else {
+                    setResult('抱歉，無法辨識手語內容');
+                }
+            })
+            .catch(error => {
+                console.error('取得手語辨識結果時發生錯誤:', error);
+                setResult('辨識過程發生錯誤，請重試');
+            })
         }
     }, [isRecording]);
 
