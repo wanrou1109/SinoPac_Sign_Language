@@ -78,7 +78,7 @@ const FeedbackScreen = () => {
                                     className={`star ${rating >= starIndex ? 'active' : ''}`}
                                     onClick={() => handleStarClick(starIndex)}
                                 >
-                                    ☆
+                                    ★
                                 </span>
                             ))}
                         </div>
