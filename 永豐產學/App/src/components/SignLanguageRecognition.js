@@ -234,12 +234,12 @@ const SignLanguageRecognition = () => {
         }
         setIsRecording(false);
         setRecognitionStatus('idle');
-        navigate('/conversation');
+        navigate(-1);
     };
 
     return (
         <div className='sign-language-recognition-screen'>
-            <Header showBackButton = {handleCancel} />
+            <Header showBackButton = {true} onBack = {handleCancel} />
 
             <div className='recognition-container'>
                 <div className='video-container'>
