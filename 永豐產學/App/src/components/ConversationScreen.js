@@ -239,9 +239,13 @@ const ConversationScreen = () => {
         };
     }, []);
 
+    const handleBack = () => {
+        navigate(-1);
+    };
+
     return (
         <div className='conversation-screen'>
-            <Header showBackButton = {true} />
+            <Header showBackButton = {true} onBack={handleBack}/>
             <div className='conversation-container'>
                 <div className='message-list'>
                     {conversations.map((message, index) => {
