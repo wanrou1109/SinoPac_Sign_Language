@@ -4,44 +4,28 @@
   align-items: center; 
   justify-content: center;
   position: relative;
-  height: 100%;
-  background-color: #fff;
+  height: 96vh;
+  background-color: #254A91;
 }
 
-.branch-dropdown {
-  width: 80%;
-  max-width: 500px;
-  padding: 12px;
+.title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   font-size: 25px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  margin-top: 35%;
-  margin-bottom: 40%;
-  background-color: #f0f0f0;
+  color:white;
+  padding-bottom: 20px;
 }
 
-.branch-dropdown option {
-  padding: 10px;
-  font-size: 20px;
-}
-
-.confirm-button {
+.start-button {
   border: none;
   border-radius: 10px;
   font-size: 25px;
   padding: 15px 20px;
   width: 80%;
   max-width: 300px;
-}
-  
-.confirm-button.disabled {
-  background-color: #e0e0e0;
-  color: #b0b0b0;
-  cursor: not-allowed;
-}
-  
-.confirm-button.active {
-  background-color: #254A91;
-  color: white;
+  background-color: white;
+  color: #254A91;
   cursor: pointer;
 }

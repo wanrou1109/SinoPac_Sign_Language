@@ -115,39 +115,12 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
   
   pythonProcess.on('close', (code) => {
     console.log(`Python 進程退出，代碼: ${code}`);
-    
-    try {
-      // 使用標記查找JSON部分
-      const startMarker = "JSON_RESULT_START";
-      const endMarker = "JSON_RESULT_END";
-      
-      const startIndex = result.indexOf(startMarker);
-      const endIndex = result.indexOf(endMarker);
-      
-      if (startIndex !== -1 && endIndex !== -1) {
-        const transcription = JSON.parse(result);
-        return res.status(200).json({
-          success: true,
-          text: transcription.text,
-          signLanguage: transcription.signLanguage
-        });
-      } else {
-        console.error('未找到JSON標記');
-        return res.status(500).json({
-          success: false,
-          message: '未找到有效的輸出結果',
-          rawOutput: result
-        });
-      }
-    } catch (e) {
-      console.error('處理Python輸出時發生錯誤:', e);
-      return res.status(500).json({
-        success: false,
-        message: '處理Python輸出時發生錯誤',
-        error: e.message,
-        rawOutput: result
-      });
-    }
+    const transcription = JSON.parse(result);
+    return res.status(200).json({
+      success: true,
+      text: transcription.text,
+      signLanguage: transcription.signLanguage
+    });
   });
 });
 

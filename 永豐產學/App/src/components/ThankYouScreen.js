@@ -26,9 +26,9 @@ const ThankYouScreen = () => {
                 </div>
 
                 <div className="message-container">
-                    <p className="system-name">永豐手語/語音辨識系統</p>
-                    <p className="thank-you-message">感謝您的使用與回饋</p>
-                    <p className="welcome-message">歡迎再度光臨～</p>
+                    <p className="system-name">手語/語音辨識系統</p>
+                    <p className="thank-you-message">感謝您的建議與回饋</p>
+                    <p className="welcome-message">歡迎再度使用～</p>
                 </div>
             </div>
         </div>
