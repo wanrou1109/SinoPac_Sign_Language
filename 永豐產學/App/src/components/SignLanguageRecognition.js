@@ -58,6 +58,10 @@ const SignLanguageRecognition = () => {
     }, []);
 
     // 手語辨識模擬回應
+<<<<<<< Updated upstream
+=======
+    /*
+>>>>>>> Stashed changes
     useEffect(() => {
         if(isRecording) {
             // 模擬手語辨識結果
@@ -67,7 +71,11 @@ const SignLanguageRecognition = () => {
 
             return () => clearTimeout(timer);
         }
+<<<<<<< Updated upstream
     }, [isRecording]);
+=======
+    }, [isRecording]);*/
+>>>>>>> Stashed changes
 
     // 開始錄製
     const handleStartRecording = () => {
@@ -155,6 +163,7 @@ const SignLanguageRecognition = () => {
     };
 
     const uploadVideoToServer = async (videoBlob) => {
+<<<<<<< Updated upstream
         const formData = new FormData();
         formData.append('video', videoBlob, 'sign-language-recording.webm');
     
@@ -213,6 +222,72 @@ const SignLanguageRecognition = () => {
         }
     };
     
+=======
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'sign-language-recording.webm');
+
+    console.log('準備上傳視訊檔案');
+    console.log('視訊檔案大小:', videoBlob.size, '位元組');
+
+    try {
+        console.log('開始上傳視訊檔案到 /api/upload/video');
+
+        const response = await fetch('http://localhost:8080/api/upload/video', {
+            method: 'POST',
+            body: formData,
+            mode: 'cors',
+            credentials: 'omit',
+        });
+
+        console.log('收到伺服器回應', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('伺服器回應錯誤:', errorText);
+            throw new Error(`伺服器回應錯誤: ${response.status} ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('伺服器回應數據', data);
+
+        // ✅ 上傳成功後自動觸發分析最新影片
+        await analyzeLatestVideo();
+
+        return data;
+    } catch (error) {
+        console.error('上傳過程中發生錯誤:', error);
+        throw error;
+    }
+};
+
+const analyzeLatestVideo = async () => {
+    try {
+        console.log('呼叫 /api/analyze_latest 進行辨識...');
+        const response = await fetch('http://localhost:8080/api/analyze_latest');
+        const data = await response.json();
+
+        if (response.ok) {
+            if (Array.isArray(data.result)) {
+                const sentence = data.result.join(' ');
+                setResult(sentence);
+                console.log('分析結果:', sentence);
+            } else {
+                // result 不是陣列，直接顯示（如：沒有偵測到任何手語）
+                console.warn('非預期結果:', data.result);
+                setResult(data.result);
+            }
+        } else {
+            console.error('分析錯誤:', data.error);
+            setResult(`錯誤：${data.error}`);
+        }
+    } catch (error) {
+        console.error('辨識 API 呼叫失敗:', error);
+        setResult('辨識過程發生錯誤');
+    }
+};
+
+
+>>>>>>> Stashed changes
 
     // 取消 and 返回
     const handleCancel = () => {
