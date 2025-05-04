@@ -228,7 +228,7 @@ const SignLanguageRecognition = () => {
     };
 
     // 取消 and 返回
-    const handleCancel = () => {
+    const handleBack = () => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
         }
@@ -239,7 +239,7 @@ const SignLanguageRecognition = () => {
 
     return (
         <div className='sign-language-recognition-screen'>
-            <Header showBackButton = {true} onBack = {handleCancel} />
+            <Header showBackButton = {true} onBack = {handleBack} />
 
             <div className='recognition-container'>
                 <div className='video-container'>
