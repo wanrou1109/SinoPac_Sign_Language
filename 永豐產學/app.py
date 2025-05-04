@@ -14,13 +14,9 @@ CORS(app, supports_credentials=True)  # ✅ 完全啟用 CORS，不限制路徑�
 UPLOAD_FOLDER = os.path.join('app', 'server', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-<<<<<<< Updated upstream
 # 載入訓練好的模型與標籤
-model = load_model('Model/model_hands4.keras')
-=======
-# 載入模型與手語標籤（126維：21點x左右手x3D）
 model = load_model('App/Model/model_hands4_v2.keras')
->>>>>>> Stashed changes
+
 actions = np.array([
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',

@@ -59,6 +59,10 @@ const SignLanguageRecognition = () => {
 
     // 手語辨識模擬回應
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    /*
+>>>>>>> Stashed changes
 =======
     /*
 >>>>>>> Stashed changes
@@ -72,7 +76,11 @@ const SignLanguageRecognition = () => {
             return () => clearTimeout(timer);
         }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     }, [isRecording]);
+=======
+    }, [isRecording]);*/
+>>>>>>> Stashed changes
 =======
     }, [isRecording]);*/
 >>>>>>> Stashed changes
@@ -164,6 +172,7 @@ const SignLanguageRecognition = () => {
 
     const uploadVideoToServer = async (videoBlob) => {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         const formData = new FormData();
         formData.append('video', videoBlob, 'sign-language-recording.webm');
     
@@ -246,6 +255,31 @@ const SignLanguageRecognition = () => {
             console.error('伺服器回應錯誤:', errorText);
             throw new Error(`伺服器回應錯誤: ${response.status} ${errorText}`);
         }
+=======
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'sign-language-recording.webm');
+
+    console.log('準備上傳視訊檔案');
+    console.log('視訊檔案大小:', videoBlob.size, '位元組');
+
+    try {
+        console.log('開始上傳視訊檔案到 /api/upload/video');
+
+        const response = await fetch('http://localhost:8080/api/upload/video', {
+            method: 'POST',
+            body: formData,
+            mode: 'cors',
+            credentials: 'omit',
+        });
+
+        console.log('收到伺服器回應', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('伺服器回應錯誤:', errorText);
+            throw new Error(`伺服器回應錯誤: ${response.status} ${errorText}`);
+        }
+>>>>>>> Stashed changes
 
         const data = await response.json();
         console.log('伺服器回應數據', data);
@@ -287,6 +321,9 @@ const analyzeLatestVideo = async () => {
 };
 
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
     // 取消 and 返回
