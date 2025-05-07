@@ -142,7 +142,7 @@ const SignLanguageRecognition = () => {
 
                     if (data.result && data.result.length > 0) {
                         const recognizedText = data.result.join(' ');
-                        setResult(recognizedText);
+                        // setResult(recognizedText);
                         const messageID = location.state?.messageID;
                         
                         if (messageID) {
