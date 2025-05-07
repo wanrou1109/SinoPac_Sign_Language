@@ -152,7 +152,7 @@ const SignLanguageRecognition = () => {
                                 id: Date.now.toString(),
                                 text: recognizedText,
                                 sender: 'customer',
-                                timestamp: new Date.toString()
+                                timestamp: new Date().toString() 
                             };
                             setConversations(prev => [...prev, newMessage]);
                         }
