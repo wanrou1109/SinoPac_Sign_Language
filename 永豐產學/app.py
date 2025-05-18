@@ -63,6 +63,7 @@ def getRes():
 # 新增: 上傳單張影像並執行模型推論
 @app.route('/api/sign-language-recognition/frame', methods=['POST'])
 def recognize_from_keypoints():
+    # 目前處理的是單隻手資料時補齊成雙手
     try:
         data = request.get_json()
         if not data or 'keypoints' not in data:
@@ -76,10 +77,12 @@ def recognize_from_keypoints():
         keypoints = keypoints[-30:]
 
         for i in range(len(keypoints)):
+            print(f'[DEBUG] 第 {i} 幀長度: {len(keypoints[i])}')
             if len(keypoints[i]) == 63:
                 keypoints[i] += [0.0] * 63
             elif len(keypoints[i]) != 126:
-                return jsonify({'success': False, 'error': f'第 {i} 幀長度錯誤，需為 126 維'}), 400
+                print('[ERROR] 接收到的資料:', keypoints)
+                return jsonify({'success': False, 'error': f'格式錯誤，第 {i} 幀長度為 {len(keypoints[i])}，預期 63 或 126'}), 400
 
         keypoints_np = np.array(keypoints).astype(np.float32).reshape(1, 30, 126)
         predictions = model.predict(keypoints_np)
@@ -106,7 +109,7 @@ def process_pdf():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    # 假設這裡有處理 PDF 的程式碼
+    # 在這裡加入實際處理 PDF 的邏輯，例如使用 PyMuPDF 提取文字或圖片等
     # 目前僅回傳成功訊息
     return jsonify({'message': 'PDF processed successfully'})
 
