@@ -1,117 +1,89 @@
-import threading
-from flask import Flask, Response, jsonify, request, make_response
+import cv2
+from flask import Flask, Response, jsonify
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
 import numpy as np
-import cv2
-from PIL import Image
+import mediapipe as mp
+import threading
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
+CORS(app)  # 允許跨域請求（給 React 用）
 
-model = load_model("app/model/model_hands4_v2.keras")
+# 載入模型與標籤
+model = load_model("App/Model/model_hands4_v2.keras")
+actions = np.array([
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',
+    'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
+])
 
+# 共享變數
 output_frame = None
 lock = threading.Lock()
 result_text = ""
 
-accumulated_result = ""
+# MediaPipe hands 初始化
+mp_hands = mp.solutions.hands
 
-# 手語標籤陣列
-labels = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',
-    'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
-]
+# 手部骨架擷取
+def extract_hand_landmarks(image):
+    with mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5) as hands:
+        results = hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        if results.multi_hand_landmarks:
+            all_landmarks = []
+            for hand_landmarks in results.multi_hand_landmarks:
+                hand = np.array([[lm.x, lm.y, lm.z] for lm in hand_landmarks.landmark]).flatten()
+                all_landmarks.append(hand)
+            while len(all_landmarks) < 2:
+                all_landmarks.append(np.zeros(63))  # 補成雙手
+            return np.concatenate(all_landmarks)
+        return None
 
-# 新增: 單張圖片預測函式
-def predict_image(img):
-    # 假設圖片為 RGB 並需要 resize 成模型輸入大小，例如 (224, 224)
-    img = img.resize((224, 224))
-    img_array = np.array(img) / 255.0  # normalize if needed
-    img_array = np.expand_dims(img_array, axis=0)
-    predictions = model.predict(img_array)
-    label_index = np.argmax(predictions)
-    label = labels[label_index]
-    return label
+# 串流影像 + 即時預測
+def generate_video():
+    global output_frame, result_text
+    cap = cv2.VideoCapture(0)
+    sequence = []
+    SEQ_LEN = 30
 
-@app.route('/favicon.ico')
-def favicon():
-    return '', 204
+    while True:
+        success, frame = cap.read()
+        if not success:
+            break
 
+        data = extract_hand_landmarks(frame)
+        if data is not None:
+            sequence.append(data)
+            if len(sequence) > SEQ_LEN:
+                sequence = sequence[-SEQ_LEN:]
 
-# 新增: 前端測試後端連線用路由
-@app.route('/api/test', methods=['GET'])
-def test_connection():
-    return jsonify({'message': 'Backend is working.'})
+            if len(sequence) == SEQ_LEN:
+                input_data = np.expand_dims(sequence, axis=0)
+                prediction = model.predict(input_data, verbose=0)[0]
+                predicted_label = actions[np.argmax(prediction)]
+                result_text = predicted_label
+                cv2.putText(frame, f'{predicted_label}', (10, 40),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-@app.route('/handlanRes', methods=['GET'])
-def handlanRes():
-    global output_frame
-    def generate():
-        while True:
-            frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+        with lock:
+            output_frame = frame.copy()
 
-@app.route('/getRes', methods=['GET'])
-def getRes():
-    global result_text
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+# 即時串流
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_video(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# 給前端查詢目前預測文字
+@app.route('/get_result', methods=['GET'])
+def get_result():
     return jsonify({'result': result_text})
 
-
-# 新增: 上傳單張影像並執行模型推論
-@app.route('/api/sign-language-recognition/frame', methods=['POST'])
-def recognize_from_keypoints():
-    try:
-        data = request.get_json()
-        if not data or 'keypoints' not in data:
-            return jsonify({'success': False, 'error': '缺少 keypoints'}), 400
-
-        keypoints = data['keypoints']
-
-        if not isinstance(keypoints, list) or len(keypoints) < 30:
-            return jsonify({'success': False, 'error': 'keypointsArray 資料不足，需 30 幀'}), 400
-
-        keypoints = keypoints[-30:]
-
-        for i in range(len(keypoints)):
-            if len(keypoints[i]) == 63:
-                keypoints[i] += [0.0] * 63
-            elif len(keypoints[i]) != 126:
-                return jsonify({'success': False, 'error': f'第 {i} 幀長度錯誤，需為 126 維'}), 400
-
-        keypoints_np = np.array(keypoints).astype(np.float32).reshape(1, 30, 126)
-        predictions = model.predict(keypoints_np)
-        label_index = np.argmax(predictions)
-        label = labels[label_index]
-
-        global accumulated_result
-        if label == 'finish':
-            final_text = accumulated_result.strip()
-            accumulated_result = ""
-            return jsonify({'success': True, 'text': '輸入完成', 'raw_label': final_text})
-        else:
-            accumulated_result += label + " "
-            return jsonify({'success': True, 'text': '請打下一個字', 'raw_label': label})
-
-    except Exception as e:
-        print('[ERROR] 推論錯誤:', e)
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/process_pdf', methods=['POST'])
-def process_pdf():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    # 假設這裡有處理 PDF 的程式碼
-    # 目前僅回傳成功訊息
-    return jsonify({'message': 'PDF processed successfully'})
-
+# 啟動 Flask
 if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=5000)
