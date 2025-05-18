@@ -48,8 +48,6 @@ const SignLanguageRecognition = () => {
             .catch(error => console.error('後端連接錯誤:', error));
     }, []);
 
-<<<<<<< Updated upstream
-=======
     useEffect(() => {
         if (isRecording) {
             recognitionIntervalRef.current = setInterval(async () => {
@@ -186,7 +184,6 @@ const SignLanguageRecognition = () => {
     }
 
     // 原錄製功能保留、新增即時辨識
->>>>>>> Stashed changes
     const handleStartRecording = () => {
         if (!streamRef.current) {
             alert('鏡頭尚未準備就緒');
