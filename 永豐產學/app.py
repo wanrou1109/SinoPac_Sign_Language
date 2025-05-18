@@ -1,89 +1,48 @@
-import cv2
-from flask import Flask, Response, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from tensorflow.keras.models import load_model
 import numpy as np
-import mediapipe as mp
-import threading
+import tensorflow as tf
 
 app = Flask(__name__)
-CORS(app)  # 允許跨域請求（給 React 用）
+CORS(app)
 
-# 載入模型與標籤
-model = load_model("App/Model/model_hands4_v2.keras")
-actions = np.array([
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',
-    'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
-])
+# 載入模型
+model = tf.keras.models.load_model('model_hands4_v2.keras')
 
-# 共享變數
-output_frame = None
-lock = threading.Lock()
-result_text = ""
+@app.route('/api/test', methods=['GET'])
+def test_api():
+    return jsonify({"message": "Backend is working."})
 
-# MediaPipe hands 初始化
-mp_hands = mp.solutions.hands
+@app.route('/api/sign-language-recognition/frame', methods=['POST'])
+def recognize_frame():
+    try:
+        data = request.get_json()
+        keypoints = data.get('keypoints')
 
-# 手部骨架擷取
-def extract_hand_landmarks(image):
-    with mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5) as hands:
-        results = hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        if results.multi_hand_landmarks:
-            all_landmarks = []
-            for hand_landmarks in results.multi_hand_landmarks:
-                hand = np.array([[lm.x, lm.y, lm.z] for lm in hand_landmarks.landmark]).flatten()
-                all_landmarks.append(hand)
-            while len(all_landmarks) < 2:
-                all_landmarks.append(np.zeros(63))  # 補成雙手
-            return np.concatenate(all_landmarks)
-        return None
+        if not keypoints or len(keypoints) != 30:
+            return jsonify({"success": False, "error": "keypoints must be 30 frames"}), 400
 
-# 串流影像 + 即時預測
-def generate_video():
-    global output_frame, result_text
-    cap = cv2.VideoCapture(0)
-    sequence = []
-    SEQ_LEN = 30
+        array = np.array(keypoints)
 
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
+        # 自動檢查每幀是否為 63 維或 126 維（單手或雙手）
+        frame_shape = array.shape[1]
+        if frame_shape not in [63, 126]:
+            return jsonify({"success": False, "error": f"Each frame must have 63 or 126 values, got {frame_shape}"}), 400
 
-        data = extract_hand_landmarks(frame)
-        if data is not None:
-            sequence.append(data)
-            if len(sequence) > SEQ_LEN:
-                sequence = sequence[-SEQ_LEN:]
+        # 單手補0
+        if frame_shape == 63:
+            zero_padding = np.zeros((30, 63))
+            array = np.concatenate([array, zero_padding], axis=1)
 
-            if len(sequence) == SEQ_LEN:
-                input_data = np.expand_dims(sequence, axis=0)
-                prediction = model.predict(input_data, verbose=0)[0]
-                predicted_label = actions[np.argmax(prediction)]
-                result_text = predicted_label
-                cv2.putText(frame, f'{predicted_label}', (10, 40),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # reshape 為模型需要的 (1, 30, 126)
+        array = array.reshape(1, 30, 126)
 
-        with lock:
-            output_frame = frame.copy()
+        prediction = model.predict(array)
+        predicted_label = np.argmax(prediction)
 
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        return jsonify({"success": True, "label": int(predicted_label), "text": str(predicted_label)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
-# 即時串流
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_video(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# 給前端查詢目前預測文字
-@app.route('/get_result', methods=['GET'])
-def get_result():
-    return jsonify({'result': result_text})
-
-# 啟動 Flask
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(port=5050)
