@@ -124,3 +124,11 @@ def process_pdf():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050)
+
+
+# 新增: 查詢目前累積的辨識結果
+@app.route('/api/sign-language-recognition/final', methods=['GET'])
+def get_final_result():
+    global accumulated_result
+    final_text = accumulated_result.strip()
+    return jsonify({'success': True, 'result': final_text})
