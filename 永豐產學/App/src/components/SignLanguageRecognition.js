@@ -224,7 +224,17 @@ const SignLanguageRecognition = () => {
             console.log('辨識結果：', data);
 
             if (data.success && data.text) {
-                updateRecognizedText(data.text);
+                // 前端顯示邏輯與後端一致，避免重複顯示非數字詞
+                if (data.text === '輸入完成' && data.raw_label) {
+                    setResult(prev => prev + '\n' + data.raw_label);
+                } else {
+                    // 若為數字或與上一個不同才加入
+                    const isDigit = /^\d$/.test(data.text);
+                    if (isDigit || data.text !== lastRecognizedTextRef.current) {
+                        lastRecognizedTextRef.current = data.text;
+                        setResult(prev => prev + data.text);
+                    }
+                }
             }
         } catch (err) {
              console.error('發送節點到後端時發生錯誤：', err);

@@ -15,6 +15,7 @@ output_frame = None
 lock = threading.Lock()
 result_text = ""
 accumulated_result = ""
+last_label = None
 
 # 手語標籤陣列
 labels = [
@@ -90,13 +91,21 @@ def recognize_from_keypoints():
         label = labels[label_index]
 
         global accumulated_result
+        global last_label
+        is_digit = label in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+        if not is_digit and label == last_label:
+            return jsonify({'success': False, 'error': '重複詞略過'})
+        else:
+            last_label = label
+
         if label == 'finish':
             final_text = accumulated_result.strip()
             accumulated_result = ""
             return jsonify({'success': True, 'text': '輸入完成', 'raw_label': final_text})
         else:
             accumulated_result += label + " "
-            return jsonify({'success': True, 'text': '請打下一個字', 'raw_label': label})
+            return jsonify({'success': True, 'text': label})
 
     except Exception as e:
         print('[ERROR] 推論錯誤:', e)
