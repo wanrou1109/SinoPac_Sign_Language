@@ -123,6 +123,7 @@ def process_pdf():
     return jsonify({'message': 'PDF processed successfully'})
 
 if __name__ == '__main__':
+<<<<<<< Updated upstream
     app.run(debug=True, port=5050)
 
 
@@ -132,3 +133,6 @@ def get_final_result():
     global accumulated_result
     final_text = accumulated_result.strip()
     return jsonify({'success': True, 'result': final_text})
+=======
+    app.run(host = '0.0.0.0', debug=True, port=8080)
+>>>>>>> Stashed changes
