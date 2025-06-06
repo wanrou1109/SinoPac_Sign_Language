@@ -1,160 +1,137 @@
-from flask import Flask, jsonify, request
-import os
-import cv2
-import numpy as np
-import mediapipe as mp
-from tensorflow.keras.models import load_model
+import threading
+from flask import Flask, Response, jsonify, request, make_response
 from flask_cors import CORS
+from tensorflow.keras.models import load_model
+import numpy as np
+import cv2
+from PIL import Image
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)  # ✅ 完全啟用 CORS，不限制路徑與來源
+CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
 
+# 載入模型與標籤
+model = load_model("App/Model/model_hands4_v2.keras")
+output_frame = None
+lock = threading.Lock()
+result_text = ""
+accumulated_result = ""
+last_label = None
 
-# 上傳影片儲存位置
-UPLOAD_FOLDER = os.path.join('app', 'server', 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# 載入訓練好的模型與標籤
-model = load_model('App/Model/model_hands4_v2.keras')
-
-actions = np.array([
+# 手語標籤陣列
+labels = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',
     'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
-])
+]
 
+# 新增: 單張圖片預測函式
+def predict_image(img):
+    # 假設圖片為 RGB 並需要 resize 成模型輸入大小，例如 (224, 224)
+    img = img.resize((224, 224))
+    img_array = np.array(img) / 255.0  # normalize if needed
+    img_array = np.expand_dims(img_array, axis=0)
+    predictions = model.predict(img_array)
+    label_index = np.argmax(predictions)
+    label = labels[label_index]
+    return label
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+
+# 新增: 前端測試後端連線用路由
 @app.route('/api/test', methods=['GET'])
 def test_connection():
-    return jsonify({'status': 'OK', 'message': '後端連接成功'}), 200
+    return jsonify({'message': 'Backend is working.'})
 
-@app.route('/api/upload/video', methods=['POST'])
-def upload_video():
-    if 'video' not in request.files:
-        return jsonify({'error': '未提供視訊檔案'}), 400
+@app.route('/handlanRes', methods=['GET'])
+def handlanRes():
+    global output_frame
+    def generate():
+        while True:
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-    video_file = request.files['video']
-    if video_file.filename == '':
-        return jsonify({'error': '檔案名稱為空'}), 400
+@app.route('/getRes', methods=['GET'])
+def getRes():
+    global result_text
+    return jsonify({'result': result_text})
+# 新增: 上傳單張影像並執行模型推論
+@app.route('/api/sign-language-recognition/frame', methods=['POST'])
+def recognize_from_keypoints():
+    # 目前處理的是單隻手資料時補齊成雙手
+    try:
+        data = request.get_json()
+        if not data or 'keypoints' not in data:
+            return jsonify({'success': False, 'error': '缺少 keypoints'}), 400
 
-    save_path = os.path.join(UPLOAD_FOLDER, video_file.filename)
-    video_file.save(save_path)
+        keypoints = data['keypoints']
 
-    return jsonify({
-        'success': True,
-        'message': '視訊上傳成功',
-        'file': {
-            'filename': video_file.filename,
-            'path': save_path,
-            'size': os.path.getsize(save_path),
-            'mimetype': video_file.mimetype
-        }
-    }), 200
+        if not isinstance(keypoints, list) or len(keypoints) < 30:
+            return jsonify({'success': False, 'error': 'keypointsArray 資料不足，需 30 幀'}), 400
 
-@app.route('/api/analyze_latest', methods=['GET'])
-def analyze_latest():
-    video_path = get_latest_video_file()
-    if not video_path:
-        return jsonify({'error': 'No video files found'}), 404
+        keypoints = keypoints[-30:]
 
-    result = analyze_video(video_path)
+        for i in range(len(keypoints)):
+            print(f'[DEBUG] 第 {i} 幀長度: {len(keypoints[i])}')
+            if len(keypoints[i]) == 63:
+                keypoints[i] += [0.0] * 63
+            elif len(keypoints[i]) != 126:
+                print('[ERROR] 接收到的資料:', keypoints)
+                return jsonify({'success': False, 'error': f'格式錯誤，第 {i} 幀長度為 {len(keypoints[i])}，預期 63 或 126'}), 400
 
-    if not result:
-        return jsonify({
-            'result': [],
-            'message': '沒有偵測到任何手語',
-            'file': os.path.basename(video_path)
-        }), 200
+        keypoints_np = np.array(keypoints).astype(np.float32).reshape(1, 30, 126)
+        predictions = model.predict(keypoints_np)
+        label_index = np.argmax(predictions)
+        label = labels[label_index]
 
-    return jsonify({
-        'result': result,
-        'message': '辨識完成',
-        'file': os.path.basename(video_path)
-    }), 200
+        global accumulated_result
+        global last_label
+        is_digit = label in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-def get_latest_video_file():
-    files = [os.path.join(UPLOAD_FOLDER, f) for f in os.listdir(UPLOAD_FOLDER)
-             if f.lower().endswith(('.webm', '.mp4', '.avi'))]
-    return max(files, key=os.path.getmtime) if files else None
-
-def analyze_video(path):
-    cap = cv2.VideoCapture(path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    WORD_GAP_FRAMES = int(1 * fps)
-    END_GAP_FRAMES = int(3 * fps)
-
-    mp_holistic = mp.solutions.holistic
-    results = []
-    sequence = []
-    silence_count = 0
-    prev_data = None
-
-    def extract_landmarks(res):
-        def to_np(landmarks):
-            return np.array([[lm.x, lm.y, lm.z] for lm in landmarks.landmark]).flatten()
-        data = []
-        # ✅ 確保同時抓左右手的資料
-        if res.left_hand_landmarks:
-            data.extend(to_np(res.left_hand_landmarks))
+        if not is_digit and label == last_label:
+            return jsonify({'success': False, 'error': '重複詞略過'})
         else:
-            data.extend(np.zeros(21 * 3))  # 左手沒抓到要補 0
-        if res.right_hand_landmarks:
-            data.extend(to_np(res.right_hand_landmarks))
+            last_label = label
+
+        if label == 'finish':
+            final_text = accumulated_result.strip()
+            accumulated_result = ""
+            return jsonify({'success': True, 'text': '輸入完成', 'raw_label': final_text})
         else:
-            data.extend(np.zeros(21 * 3))  # 右手沒抓到要補 0
-        return np.array(data) if data else None
+            accumulated_result += label + " "
+            return jsonify({'success': True, 'text': label})
 
+    except Exception as e:
+        print('[ERROR] 推論錯誤:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-
-    with mp_holistic.Holistic(static_image_mode=False) as holistic:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = holistic.process(image)
-            data = extract_landmarks(result)
-
-            is_almost_static = False
-            if data is not None and prev_data is not None:
-                delta = np.linalg.norm(data - prev_data)
-                is_almost_static = delta < 0.01
-            prev_data = data
-
-            if data is None or is_almost_static:
-                silence_count += 1
-                if silence_count == WORD_GAP_FRAMES and sequence:
-                    word = predict_action(sequence)
-                    if word:
-                        results.append(word)
-                    sequence = []
-                if silence_count >= END_GAP_FRAMES:
-                    break
-            else:
-                silence_count = 0
-                sequence.append(data)
-
-        if sequence:
-            word = predict_action(sequence)
-            if word:
-                results.append(word)
-
-    cap.release()
-    return results
-
-def predict_action(sequence):
-    SEQ_LEN = 30
-    sequence = [s for s in sequence if s is not None]
-    if not sequence:
-        return None
-    sequence = sequence[-SEQ_LEN:]
-    if len(sequence) < SEQ_LEN:
-        sequence = np.pad(sequence, ((0, SEQ_LEN - len(sequence)), (0, 0)), mode='constant')
-    else:
-        sequence = np.array(sequence)
-    input_data = np.expand_dims(sequence, axis=0)  # (1, 30, 126)
-    prediction = model.predict(input_data)[0]
-    return actions[np.argmax(prediction)]
+'''
+@app.route('/process_pdf', methods=['POST'])
+def process_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    # 在這裡加入實際處理 PDF 的邏輯，例如使用 PyMuPDF 提取文字或圖片等
+    # 目前僅回傳成功訊息
+    return jsonify({'message': 'PDF processed successfully'})
+'''
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+    app.run(host='0.0.0.0', port=5050, debug=True)
+
+
+# 新增: 查詢目前累積的辨識結果
+@app.route('/api/sign-language-recognition/final', methods=['GET'])
+def get_final_result():
+    global accumulated_result
+    final_text = accumulated_result.strip()
+    return jsonify({'success': True, 'result': final_text})
+

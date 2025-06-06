@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@mediapipe/hands": "^0.4.1675469240",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -14,6 +17,7 @@
     "server": "nodemon server/server.js",
     "dev": "concurrently \"npm run start\" \"npm run server\""
   },
+  "proxy": "http://localhost:5050",
   "browserslist": {
     "production": [
       ">0.2%",
