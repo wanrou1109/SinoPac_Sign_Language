@@ -134,3 +134,4 @@ def get_final_result():
     global accumulated_result
     final_text = accumulated_result.strip()
     return jsonify({'success': True, 'result': final_text})
+
