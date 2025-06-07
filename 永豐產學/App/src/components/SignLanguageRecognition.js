@@ -11,9 +11,9 @@ const SignLanguageRecognition = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { addMessage, editMessage, setRecognitionStatus, recognitionStatus, setConversations } = useAppContext();
-    const [ isRecording, setIsRecording ] = useState(false);
-    const [ result, setResult ] = useState('');
-    const [ isProcessing, setIsProcessing ] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [result, setResult] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const mediaRecorderRef = useRef(null);
@@ -23,6 +23,7 @@ const SignLanguageRecognition = () => {
     const lastRecognizedTextRef = useRef('');
     const resultBoxRef = useRef(null);
     const keypointsBuffer = useRef([]);
+    const finalResultRef = useRef(''); //追蹤最終結果
     const editMessageID = location.state?.messageID;
     
     useEffect(() => {
@@ -70,7 +71,7 @@ const SignLanguageRecognition = () => {
                             const cy = flippedLandmarks[0].y * 480;
 
                             drawConnectors(canvasCtx, flippedLandmarks, handsModule.HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
-                                                        drawLandmarks(canvasCtx, flippedLandmarks, { color: '#FF0000', lineWidth: 1 });
+                            drawLandmarks(canvasCtx, flippedLandmarks, { color: '#FF0000', lineWidth: 1 });
 
                             canvasCtx.font = "16px Arial";
                             canvasCtx.fillStyle = "blue";
@@ -79,7 +80,6 @@ const SignLanguageRecognition = () => {
                             canvasCtx.scale(-1, 1);
                             canvasCtx.fillText(handedness, -cx, cy - 10);
                             canvasCtx.restore();
-                            // canvasCtx.fillText(handedness, cx, cy - 10);
                         }
                     }
                     canvasCtx.restore();
@@ -173,29 +173,19 @@ const SignLanguageRecognition = () => {
 
     // 即時辨識
     const startPeriodicRecognition = () => {
+        console.log('🎯 啟動定期辨識');
         recognitionIntervalRef.current = setInterval(() => {
             if (!isProcessing) {
                 captureAndRecognize();
             }
         }, 1000);
-     };
+    };
 
     const captureAndRecognize = async () => {
-         if (!videoRef.current || !streamRef.current) return;
+        if (!videoRef.current || !streamRef.current) return;
 
         try {
             setIsProcessing(true);
-
-            // canvas -> 捕捉當前影片幀
-            const canvas = document.createElement('canvas');
-            const videoElement = videoRef.current;
-
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-
-            // 影片幀繪製到 canvas
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             // 傳送到後端，延遲 0 毫秒
             setTimeout(() => {
                 sendFrameToRecognition();
@@ -211,13 +201,16 @@ const SignLanguageRecognition = () => {
         try {
             const keypointsArray = window.keypointsArray;
             if (!keypointsArray || keypointsArray.length !== 30) {
-                throw new Error('keypointsArray 資料不足，需 30 幀');
+                console.log('⏳ keypointsArray 資料不足，需 30 幀，當前:', keypointsArray?.length || 0);
+                return;
             }
 
             const totalLength = keypointsArray.reduce((sum, row) => sum + row.length, 0);
             if (totalLength !== 30 * 126) {
-                throw new Error(`格式錯誤，應為 (30, 126)，目前為 (30, ${totalLength / 30})`);
+                console.log(`⏳ 格式錯誤，應為 (30, 126)，目前為 (30, ${totalLength / 30})`);
+                return;
             }
+            
             console.log('發送節點資料進行辨識...');
             const response = await fetch('/api/sign-language-recognition/frame', {
                 method: 'POST',
@@ -226,6 +219,7 @@ const SignLanguageRecognition = () => {
                 },
                 body: JSON.stringify({ keypoints: keypointsArray })
             });
+            
             if (!response.ok) {
                 throw new Error(`伺服器錯誤： ${response.status}`);
             }
@@ -233,21 +227,52 @@ const SignLanguageRecognition = () => {
             const data = await response.json();
             console.log('辨識結果：', data);
 
-            if (data.success && data.text) {
-                // 前端顯示邏輯與後端一致，避免重複顯示非數字詞
+            if (data.success === true && data.text && data.text.trim() !== '') {
+                console.log('處理成功的辨識文本:', data.text);
+                
                 if (data.text === '輸入完成' && data.raw_label) {
-                    setResult(prev => prev + '\n' + data.raw_label);
+                    console.log('處理輸入完成');
+                    setResult(prev => {
+                        const newResult = prev + '\n' + data.raw_label;
+                        finalResultRef.current = newResult; // 同步更新 ref
+                        console.log('輸入完成 - 新結果:', newResult);
+                        return newResult;
+                    });
+                    return;
+                }
+                
+                // 檢查是否為數字
+                const isDigit = /^\d$/.test(data.text);
+                console.log('是否為數字:', isDigit);
+                
+                if (isDigit) {
+                    console.log('添加數字:', data.text);
+                    lastRecognizedTextRef.current = data.text;
+                    setResult(prev => {
+                        const newResult = prev + data.text;
+                        finalResultRef.current = newResult; // 同步更新 ref
+                        console.log('數字 - 新結果:', newResult);
+                        return newResult;
+                    });
+                    return;
+                }
+                
+                // 處理非數字：只有與上一個不同才添加
+                if (data.text !== lastRecognizedTextRef.current) {
+                    console.log('添加非重複文本:', data.text);
+                    lastRecognizedTextRef.current = data.text;
+                    setResult(prev => {
+                        const newResult = prev + data.text;
+                        finalResultRef.current = newResult; // 同步更新 ref
+                        console.log('非數字 - 新結果:', newResult);
+                        return newResult;
+                    });
                 } else {
-                    // 若為數字或與上一個不同才加入
-                    const isDigit = /^\d$/.test(data.text);
-                    if (isDigit || data.text !== lastRecognizedTextRef.current) {
-                        lastRecognizedTextRef.current = data.text;
-                        setResult(prev => prev + data.text);
-                    }
+                    console.log('跳過重複的非數字文本');
                 }
             }
         } catch (err) {
-             console.error('發送節點到後端時發生錯誤：', err);
+            console.error('發送節點到後端時發生錯誤：', err);
         }
     };
 
@@ -261,7 +286,7 @@ const SignLanguageRecognition = () => {
             if (newText === lastText) {
                 return prevText;
             }
-             return prevText + newText;
+            return prevText + newText;
         });
     };
 
@@ -273,6 +298,7 @@ const SignLanguageRecognition = () => {
 
         setResult('');
         lastRecognizedTextRef.current = '';
+        finalResultRef.current = '';
         recordedChunksRef.current = [];
 
         const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
@@ -285,22 +311,28 @@ const SignLanguageRecognition = () => {
         };
 
         mediaRecorder.onstop = async () => {
+            console.log('錄製停止');
+            
             if (recognitionIntervalRef.current) {
                 clearInterval(recognitionIntervalRef.current);
                 recognitionIntervalRef.current = null;
             }
+            
             try {
                 const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
                 if (blob.size === 0) throw new Error('視訊檔案為空');
-                // await uploadVideoToServer(blob); // 上傳完整影片
 
                 setTimeout(() => {
                     setRecognitionStatus('idle');
+                    const finalResult = finalResultRef.current || '無辨識結果';
+                    console.log('最終辨識結果:', finalResult);
+                    
                     if (editMessageID) {
-                        editMessage(editMessageID, result);
+                        editMessage(editMessageID, finalResult);
                     } else {
-                        addMessage(result, 'customer');
+                        addMessage(finalResult, 'customer');
                     }
+                    
                     navigate('/conversation');
                 }, 1000);
             } catch (err) {
@@ -329,72 +361,6 @@ const SignLanguageRecognition = () => {
 
         setIsRecording(false);
         setRecognitionStatus('processing');
-    };
-
-    // 整段影片上傳後端功能
-    /**
-    const uploadVideoToServer = async (videoBlob) => {
-        const formData = new FormData();
-        formData.append('video', videoBlob, 'sign-language-recording.webm');
-
-        console.log('開始上傳視訊檔案到 /api/upload/video');
-        const response = await fetch('http://localhost:5000/api/upload/video', {
-            method: 'POST',
-            body: formData,
-            mode: 'cors',
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`上傳失敗: ${text}`);
-        }
-
-        const data = await response.json();
-        console.log('上傳成功:', data);
-
-        await analyzeLatestVideo();
-        return data;
-    };
-    */
-
-    const analyzeLatestVideo = async () => {
-        try {
-            setTimeout(async () => {
-                try {
-                    console.log('呼叫 /api/analyze_latest 進行辨識...');
-                    const response = await fetch('/api/analyze_latest');
-                    if (!response.ok) {
-                        throw new Error(`網路回應不正常: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    console.log('手語辨識結果：', data);
-                    if (data.result && data.result.length > 0) {
-                        const recognizedText = data.result.join(' ');
-                        // setResult(recognizedText);
-                        const messageID = location.state?.messageID;
-                        if (messageID) {
-                            editMessage(messageID, recognizedText);
-                        } else {
-                            const newMessage = {
-                                id: Date.now.toString(),
-                                text: recognizedText,
-                                sender: 'customer',
-                                timestamp: new Date().toString() 
-                            };
-                            setConversations(prev => [...prev, newMessage]);
-                        }
-                        navigate('/conversation');
-                    } else {
-                        setResult('無法辨識手語內容');
-                    }
-                } catch (error) {
-                    console.error('辨識結果時發生錯誤：', error);
-                    setResult('辨識過程發生錯誤，請重試');
-                }
-            }, 1000);
-        } catch (e) {
-            console.error('analyzeLatestVideo error:', e);
-        }
     };
 
     const handleBack = () => {
