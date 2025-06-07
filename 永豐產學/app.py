@@ -111,6 +111,7 @@ def recognize_from_keypoints():
         print('[ERROR] 推論錯誤:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+'''
 @app.route('/process_pdf', methods=['POST'])
 def process_pdf():
     if 'file' not in request.files:
@@ -121,10 +122,10 @@ def process_pdf():
     # 在這裡加入實際處理 PDF 的邏輯，例如使用 PyMuPDF 提取文字或圖片等
     # 目前僅回傳成功訊息
     return jsonify({'message': 'PDF processed successfully'})
+'''
 
 if __name__ == '__main__':
-<<<<<<< Updated upstream
-    app.run(debug=True, port=5050)
+    app.run(host='0.0.0.0', port=5050, debug=True)
 
 
 # 新增: 查詢目前累積的辨識結果
@@ -133,6 +134,3 @@ def get_final_result():
     global accumulated_result
     final_text = accumulated_result.strip()
     return jsonify({'success': True, 'result': final_text})
-=======
-    app.run(host = '0.0.0.0', debug=True, port=8080)
->>>>>>> Stashed changes

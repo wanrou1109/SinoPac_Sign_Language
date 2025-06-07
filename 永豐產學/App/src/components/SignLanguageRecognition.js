@@ -115,13 +115,23 @@ const SignLanguageRecognition = () => {
 
                 const camera = new Camera(videoRef.current, {
                     onFrame: async () => {
+                        const video = videoRef.current;
+
+                        // 防呆：確認 video 存在且畫面已準備好（readyState >= 2）
+                        if (!video || video.readyState < 2) {
+                            console.warn('跳過尚未準備好的 video 畫面');
+                            return;
+                        }
+
                         const flippedCanvas = document.createElement('canvas');
                         flippedCanvas.width = 640;
                         flippedCanvas.height = 480;
                         const flippedCtx = flippedCanvas.getContext('2d');
+
                         flippedCtx.translate(640, 0);
                         flippedCtx.scale(-1, 1);
-                        flippedCtx.drawImage(videoRef.current, 0, 0, 640, 480);
+                        flippedCtx.drawImage(video, 0, 0, 640, 480);
+
                         await hands.send({ image: flippedCanvas });
                     },
                     width: 640,
