@@ -117,7 +117,13 @@ def recognize_from_keypoints():
         is_digit = label in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
         if not is_digit and label == last_label:
-            return jsonify({'success': False, 'error': '重複詞略過'})
+            print(f'[DEBUG] 重複詞被略過: {label}')
+            return jsonify({
+                'success': False,
+                'error': '重複詞略過',
+                'skipped_label': label,
+                'translated': label_map.get(label, label)
+            })
         else:
             last_label = label
 
@@ -156,3 +162,4 @@ def get_final_result():
     global accumulated_result
     final_text = accumulated_result.strip()
     return jsonify({'success': True, 'result': final_text})
+
