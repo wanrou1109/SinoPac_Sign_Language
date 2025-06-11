@@ -24,6 +24,24 @@ labels = [
     'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
 ]
 
+# 英文到中文對照字典
+label_map = {
+    'check': '確認',
+    'finish': '完成',
+    'give_you': '給你',
+    'good': '好',
+    'i': '我',
+    'id_card': '身分證',
+    'is': '是',
+    'money': '錢',
+    'saving_book': '存摺',
+    'sign': '簽名',
+    'taiwan': '台灣',
+    'take': '拿',
+    'ten_thousand': '萬',
+    'yes': '是的'
+}
+
 # 新增: 單張圖片預測函式
 def predict_image(img):
     # 假設圖片為 RGB 並需要 resize 成模型輸入大小，例如 (224, 224)
@@ -88,7 +106,11 @@ def recognize_from_keypoints():
         keypoints_np = np.array(keypoints).astype(np.float32).reshape(1, 30, 126)
         predictions = model.predict(keypoints_np)
         label_index = np.argmax(predictions)
+        confidence = predictions[0][label_index]
+        if confidence < 0.8:
+            return jsonify({'success': False, 'error': '辨識信心度過低', 'confidence': float(confidence)}), 200
         label = labels[label_index]
+        translated_label = label_map.get(label, label)
 
         global accumulated_result
         global last_label
@@ -99,13 +121,13 @@ def recognize_from_keypoints():
         else:
             last_label = label
 
-        if label == 'finish':
+        if label == 'finish' or translated_label == '完成':
             final_text = accumulated_result.strip()
             accumulated_result = ""
             return jsonify({'success': True, 'text': '輸入完成', 'raw_label': final_text})
         else:
-            accumulated_result += label + " "
-            return jsonify({'success': True, 'text': label})
+            accumulated_result += translated_label + " "
+            return jsonify({'success': True, 'text': translated_label})
 
     except Exception as e:
         print('[ERROR] 推論錯誤:', e)
@@ -134,4 +156,3 @@ def get_final_result():
     global accumulated_result
     final_text = accumulated_result.strip()
     return jsonify({'success': True, 'result': final_text})
-
