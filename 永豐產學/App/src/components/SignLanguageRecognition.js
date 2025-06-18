@@ -107,9 +107,13 @@ const SignLanguageRecognition = () => {
                         if (isWaitingForMovement) {
                             const last = lastFrameRef.current;
                             if (last) {
-                                const diff = combined.reduce((acc, val, i) => acc + Math.abs(val - last[i]), 0);
-                                if (diff > 5) {
-                                    console.log("✅ 偵測到使用者動作 → 恢復辨識");
+                                const threshold = 0.015;
+                                const diff = Math.sqrt(
+                                    combined.reduce((acc, val, i) => acc + Math.pow(val - last[i], 2), 0) / combined.length
+                                );
+
+                                if (diff > threshold) {
+                                    console.log(`✅ 偵測到使用者動作（差異量 ${diff.toFixed(4)}） → 恢復辨識`);
                                     setIsWaitingForMovement(false);
                                 }
                             }
