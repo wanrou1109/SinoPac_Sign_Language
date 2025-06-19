@@ -1,14 +1,11 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, {useEffect, useState, useMemo, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import {useAppContext} from '../contexts/AppContext.js';
 import Header from './Header.js';
 import '../styles/ConversationScreen.css';
 
 const ConversationScreen = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const { selectedBranch } = location.state || {};
     const { conversations, setConversations, editMessage } = useAppContext();
 
     const [ editingMessageID, setEditingMessageID ] = useState(null);
@@ -19,6 +16,100 @@ const ConversationScreen = () => {
     const [isRecordingActive, setIsRecordingActive] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const [replacingMessageID, setReplacingMessageID] = useState(null);
+
+    // Unity
+    const unityCanvasRef = useRef(null);
+    const unityInstanceRef = useRef(null);
+    const [isUnityLoaded, setIsUnityLoaded] = useState(false);
+    const [unityError, setUnityError] = useState(null);
+
+    // Unity初始化
+    useEffect(() => {
+        const loadUnity = async () => {
+            try {
+                // 動態載入Unity loader
+                const script = document.createElement('script');
+                script.src = 'SignPlayer/Build/SignPlayer.loader.js';
+                script.onload = () => {
+                    const config = {
+                        dataUrl: "SignPlayer/Build/SignPlayer.data",
+                        frameworkUrl: "SignPlayer/Build/SignPlayer.framework.js",
+                        codeUrl: "SignPlayer/Build/SignPlayer.wasm",
+                        streamingAssetsUrl: "StreamingAssets",
+                        companyName: "DefaultCompany",
+                        productName: "SignPlayer",
+                        productVersion: "1.0",
+                        devicePixelRatio: 1
+                    };
+
+                    window.createUnityInstance(unityCanvasRef.current, config).then((unityInstance) => {
+                        unityInstanceRef.current = unityInstance;
+                        setIsUnityLoaded(true);
+                        console.log('Unity手語播放器載入成功');
+                    }).catch((message) => {
+                        console.error("Unity載入失敗：", message);
+                        setUnityError("Unity載入失敗：" + message);
+                    });
+                };
+                
+                script.onerror = () => {
+                    setUnityError("無法載入Unity腳本文件");
+                };
+                
+                document.head.appendChild(script);
+
+                // 清理函數：移除script
+                return () => {
+                    if (script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                };
+            } catch (error) {
+                console.error('載入Unity時發生錯誤：', error);
+                setUnityError('載入Unity時發生錯誤：' + error.message);
+            }
+        };
+
+        loadUnity();
+
+        // 清理
+        return () => {
+            if (unityInstanceRef.current) {
+                try {
+                    unityInstanceRef.current.Quit();
+                } catch (e) {
+                    console.log('Unity清理錯誤：', e);
+                }
+            }
+        };
+    }, []);
+
+    // 播放手語動畫的函數
+    const playSignAnimation = (text) => {
+        if (isUnityLoaded && unityInstanceRef.current && text.trim()) {
+            try {
+                console.log('播放手語動畫：', text);
+                unityInstanceRef.current.SendMessage("SignPlayer", "PlaySign", text);
+            } catch (error) {
+                console.error('播放手語動畫失敗：', error);
+            }
+        } else {
+            console.warn('Unity未載入或文字為空，無法播放手語動畫');
+        }
+    };
+
+    // 監聽conversations變化，當有新的staff訊息時播放手語動畫
+    useEffect(() => {
+        if (conversations.length > 0) {
+            const lastMessage = conversations[conversations.length - 1];
+            if (lastMessage.sender === 'staff' && lastMessage.text) {
+                // 延遲一下播放，確保動畫系統準備好
+                setTimeout(() => {
+                    playSignAnimation(lastMessage.text);
+                }, 500);
+            }
+        }
+    }, [conversations, isUnityLoaded]);
 
 
     // 使用 useMemo 計算每一方最後一條訊息的索引
@@ -246,6 +337,30 @@ const ConversationScreen = () => {
     return (
         <div className='conversation-screen'>
             <Header showBackButton = {true} onBack={handleBack}/>
+
+            {/* Unity */}
+            <div className="unity-sign-animation-container">
+                <div className="unity-header">
+                    <h3>Sign Language Animation</h3>
+                    {unityError && <div className="unity-error">錯誤: {unityError}</div>}
+                    {!isUnityLoaded && !unityError && <div className="unity-loading">載入中...</div>}
+                </div>
+                <div className="unity-canvas-wrapper">
+                    <canvas 
+                        ref={unityCanvasRef}
+                        id="unity-canvas" 
+                        width="480" 
+                        height="300"
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            background: '#fff',
+                            border: '1px solid #ddd'
+                        }}
+                    />
+                </div>
+            </div>
+
             <div className='conversation-container'>
                 <div className='message-list'>
                     {conversations.map((message, index) => {
