@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>手語動畫播放器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="TemplateData/style.css" />
+  <script src="Build/SignPlayer.loader.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 0;
+      background: #f2f2f2;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      z-index: 1;
+      position: relative;
+    }
+
+    #sign-controls {
+      margin-bottom: 20px;
+      z-index: 1;
+      position: relative;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    #unity-container {
+      width: 960px;
+      height: 600px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid #444;
+      background: #fff;
+      z-index: 0;
+      position: relative;
+    }
+
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>手語動畫播放器</h1>
+
+  <div id="sign-controls">
+    <input type="text" id="signInput" placeholder="請輸入中文手語詞句" />
+    <button onclick="playInputSign()">播放動畫</button>
+    <button onclick="playHello()">播放『你好』</button>
+  </div>
+
+  <div id="unity-container">
+    <canvas id="unity-canvas" width="960" height="600"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+
+    const config = {
+      dataUrl: "Build/SignPlayer.data",
+      frameworkUrl: "Build/SignPlayer.framework.js",
+      codeUrl: "Build/SignPlayer.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "SignPlayer",
+      productVersion: "1.0",
+      devicePixelRatio: 1  // 避免高 DPI 爆畫面
+    };
+
+    createUnityInstance(canvas, config).then((unityInstance) => {
+      window.unityInstance = unityInstance;
+    }).catch((message) => {
+      alert("Unity 載入失敗：" + message);
+    });
+
+    function playInputSign() {
+      const text = document.getElementById("signInput").value;
+      if (text.trim()) {
+        unityInstance.SendMessage("SignPlayer", "PlaySign", text);
+      }
+    }
+
+    function playHello() {
+      unityInstance.SendMessage("SignPlayer", "PlaySign", "你好");
+    }
+  </script>
+</body>
+</html>
