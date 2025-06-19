@@ -178,7 +178,7 @@ const SignLanguageRecognition = () => {
             if (!isProcessing) {
                 captureAndRecognize();
             }
-        }, 1000);
+        }, 2000);
     };
 
     const captureAndRecognize = async () => {
