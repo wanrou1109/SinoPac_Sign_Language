@@ -1,165 +1,131 @@
-import threading
-from flask import Flask, Response, jsonify, request, make_response
+import fitz  # PyMuPDF
+from flask import Flask, request, send_file,Response, make_response, jsonify
+from werkzeug.utils import secure_filename
+import os
 from flask_cors import CORS
-from tensorflow.keras.models import load_model
-import numpy as np
-import cv2
+from flask_cors import cross_origin
+import numpy as np  # 引入 NumPy 模組
 from PIL import Image
+import io
+from Train_Model_hands2 import start
+import threading
+
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
-
-# 載入模型與標籤
-model = load_model("App/Model/model_hands4_v2.keras")
-output_frame = None
+CORS(app, supports_credentials=True)
+outputFrame = None
 lock = threading.Lock()
-result_text = ""
-accumulated_result = ""
-last_label = None
+trans_res = None
+def process_pdf(input_path, output_path, type, level):
+    # 打開PDF
+    pdf_document = fitz.open(input_path)
+    new_pdf = fitz.open()
 
-# 手語標籤陣列
-labels = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'check', 'finish', 'give_you', 'good', 'i', 'id_card', 'is',
-    'money', 'saving_book', 'sign', 'taiwan', 'take', 'ten_thousand', 'yes'
-]
+    # 每一頁
+    for page_num in range(len(pdf_document)):
+        page = pdf_document.load_page(page_num)
 
-# 英文到中文對照字典
-label_map = {
-    'check': '確認',
-    'finish': '完成',
-    'give_you': '給你',
-    'good': '好',
-    'i': '我',
-    'id_card': '身分證',
-    'is': '是',
-    'money': '錢',
-    'saving_book': '存摺',
-    'sign': '簽名',
-    'taiwan': '台灣',
-    'take': '拿',
-    'ten_thousand': '萬',
-    'yes': '是的'
-}
+        # 拿頁面的像素數據
+        pix = page.get_pixmap()
 
-# 新增: 單張圖片預測函式
-def predict_image(img):
-    # 假設圖片為 RGB 並需要 resize 成模型輸入大小，例如 (224, 224)
-    img = img.resize((224, 224))
-    img_array = np.array(img) / 255.0  # normalize if needed
-    img_array = np.expand_dims(img_array, axis=0)
-    predictions = model.predict(img_array)
-    label_index = np.argmax(predictions)
-    label = labels[label_index]
-    return label
+        # 像素轉為PIL圖像
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        # 圖像數據轉為Numpy
+        img_array = np.array(img)
+
+        if level == 's':
+            factor = 1.15
+        elif level == 'm':
+            factor = 1.3
+        else:
+            factor = 1.5
+
+        # 修改rgb值
+        if type == 'r':
+            img_array[..., 0] = np.minimum(255, img_array[..., 0] * factor)  # R channel
+            img_array[..., 2] = np.minimum(255, img_array[..., 2] * factor)  # B channel
+        elif type == 'g':
+            img_array[..., 1] = np.minimum(255, img_array[..., 1] * factor) # G channel
+            img_array[..., 2] = np.minimum(255, img_array[..., 2] * factor) # B channel
+        else:
+            img_array[..., 0] = np.minimum(255, img_array[..., 0] * factor) # R channel
+            img_array[..., 1] = np.minimum(255, img_array[..., 1] * factor) # G channel
+        
+
+        # 修改後的轉回PIL
+        img = Image.fromarray(img_array)
+
+        # PIL轉回圖像加到新的pdf
+        img_stream = io.BytesIO()
+        img.save(img_stream, format='PDF')
+        img_pdf = fitz.open("pdf", img_stream.getvalue())
+        new_pdf.insert_pdf(img_pdf)
+
+    # 保存修改後的PDF
+    new_pdf.save(output_path)
+    new_pdf.close()
+    pdf_document.close()
+
+
 
 @app.route('/favicon.ico')
+@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def favicon():
     return '', 204
 
+@app.route('/handlanRes', methods=['POST'])
+def handle_result():
+    if request.method == 'POST':
+        data = request.form  
+        result = data.get('result')  
+        global trans_res
+        trans_res = result
+        print('Received result:', result)
 
-# 新增: 前端測試後端連線用路由
-@app.route('/api/test', methods=['GET'])
-def test_connection():
-    return jsonify({'message': 'Backend is working.'})
 
-@app.route('/handlanRes', methods=['GET'])
-def handlanRes():
-    global output_frame
-    def generate():
-        while True:
-            frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/process_pdf', methods=['POST'])
+def process_pdf_route():
+    file = request.files['file']
+    type = request.form['type']
+    level = request.form['level']
+
+    filename = secure_filename(file.filename)
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_' + filename)
+    file.save(input_path)
+
+
+    process_pdf(input_path, output_path, type, level)
+
+    return send_file(output_path, mimetype='application/pdf')
+
+from flask import make_response
+
+@app.route('/video_feed')
+@cross_origin(origins='http://localhost:3000', supports_credentials=True)
+def video_feed():
+    try:
+        def generate():
+            for frame in start():
+                yield frame
+
+        return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        print(f"Video stream error: {e}")
+        error_response = make_response("Video stream error", 500)
+        return error_response
+    
 @app.route('/getRes', methods=['GET'])
 def getRes():
-    global result_text
-    return jsonify({'result': result_text})
-# 新增: 上傳單張影像並執行模型推論
-@app.route('/api/sign-language-recognition/frame', methods=['POST'])
-def recognize_from_keypoints():
-    # 目前處理的是單隻手資料時補齊成雙手
-    try:
-        data = request.get_json()
-        if not data or 'keypoints' not in data:
-            return jsonify({'success': False, 'error': '缺少 keypoints'}), 400
-
-        keypoints = data['keypoints']
-
-        if not isinstance(keypoints, list) or len(keypoints) < 30:
-            return jsonify({'success': False, 'error': 'keypointsArray 資料不足，需 30 幀'}), 400
-
-        keypoints = keypoints[-30:]
-
-        for i in range(len(keypoints)):
-            print(f'[DEBUG] 第 {i} 幀長度: {len(keypoints[i])}')
-            if len(keypoints[i]) == 63:
-                keypoints[i] += [0.0] * 63
-            elif len(keypoints[i]) != 126:
-                print('[ERROR] 接收到的資料:', keypoints)
-                return jsonify({'success': False, 'error': f'格式錯誤，第 {i} 幀長度為 {len(keypoints[i])}，預期 63 或 126'}), 400
-
-        keypoints_np = np.array(keypoints).astype(np.float32).reshape(1, 30, 126)
-        predictions = model.predict(keypoints_np)
-        label_index = np.argmax(predictions)
-        confidence = predictions[0][label_index]
-        if confidence < 0.8:
-            return jsonify({'success': False, 'error': '辨識信心度過低', 'confidence': float(confidence)}), 200
-        label = labels[label_index]
-        translated_label = label_map.get(label, label)
-
-        global accumulated_result
-        global last_label
-        is_digit = label in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-
-        if not is_digit and label == last_label:
-            print(f'[DEBUG] 重複詞被略過: {label}')
-            return jsonify({
-                'success': False,
-                'error': '重複詞略過',
-                'skipped_label': label,
-                'translated': label_map.get(label, label)
-            })
-        else:
-            last_label = label
-
-        if label == 'finish' or translated_label == '完成':
-            final_text = accumulated_result.strip()
-            accumulated_result = ""
-            return jsonify({'success': True, 'text': '輸入完成', 'raw_label': final_text})
-        else:
-            accumulated_result += translated_label + " "
-            return jsonify({'success': True, 'text': translated_label})
-
-    except Exception as e:
-        print('[ERROR] 推論錯誤:', e)
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-'''
-@app.route('/process_pdf', methods=['POST'])
-def process_pdf():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    # 在這裡加入實際處理 PDF 的邏輯，例如使用 PyMuPDF 提取文字或圖片等
-    # 目前僅回傳成功訊息
-    return jsonify({'message': 'PDF processed successfully'})
-'''
+    global trans_res
+    msg = trans_res if trans_res is not None else ""
+    response = jsonify({"msg": msg})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
-
-
-# 新增: 查詢目前累積的辨識結果
-@app.route('/api/sign-language-recognition/final', methods=['GET'])
-def get_final_result():
-    global accumulated_result
-    final_text = accumulated_result.strip()
-    return jsonify({'success': True, 'result': final_text})
-
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    app.run(host='0.0.0.0', port=5050)

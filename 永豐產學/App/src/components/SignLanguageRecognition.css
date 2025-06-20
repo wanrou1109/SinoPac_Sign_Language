@@ -1,0 +1,40 @@
+.video-stream-box {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.streaming-result-box {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.result-text {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f0f0f0;
+  display: inline-block;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+.action-bar {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.record-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.record-button:hover {
+  background-color: #0056b3;
+}
