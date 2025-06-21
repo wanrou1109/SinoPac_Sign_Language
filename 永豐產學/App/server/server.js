@@ -126,6 +126,35 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
     }
     try {
       const transcription = JSON.parse(result);
+
+      // 呼叫 translate_to_sign.py，將 Whisper 辨識出的文字送給 LLM 處理
+      const llmScript = path.join(__dirname, 'speech_recognition', 'translate_to_sign.py');
+      const llmProcess = spawn(pythonPath, [ llmScript, transcription.text], {
+        shell:true,
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: 'utf-8'
+        }
+      });
+
+      llmProcess.stdout.on('data', (chunk) => {
+        console.log('【LLM 轉手語輸出】', chunk.toString());
+      });
+      llmProcess.stderr.on('data', chunk => {
+        const msg = chunk.toString();
+        // 如果是 jieba 正常加载信息，就忽略
+        if (/^Building prefix dict from the default dictionary/.test(msg)
+            || msg.includes('Loading model from cache')) {
+          return;
+        }
+        // 其他内容才当做错误打印
+        console.error('【LLM 錯誤】', msg);
+      });
+      llmProcess.on('close', (code) => {
+        console.log(`LLM 進程退出，代碼: ${code}`);
+      });
+      // LLM 結束呼叫
+
       return res.status(200).json({
         success: true,
         text: transcription.text,
