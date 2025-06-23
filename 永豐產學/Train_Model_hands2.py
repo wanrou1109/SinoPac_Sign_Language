@@ -15,13 +15,6 @@ def start():
         'ten_thousand', 'yes'
     ])
 
-    label_map_zh = {
-        'check': '確認', 'finish': '完成', 'give_you': '給你',
-        'good': '好', 'i': '我', 'id_card': '身分證',
-        'is': '是', 'money': '錢', 'saving_book': '存摺',
-        'sign': '簽名', 'taiwan': '台灣', 'take': '拿',
-        'ten_thousand': '萬', 'yes': '是的'
-    }
 
     new_model = load_model('App/Model/model_hands4_v2.keras')
     mp_holistic = mp.solutions.holistic
@@ -100,8 +93,8 @@ def start():
             draw.text((0, 0), trans_result, fill=(255, 255, 255), font=font)
             img = np.array(img_pil)
 
-            # cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
-            # cv2.putText(frame, ' '.join(sentence), (3, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
+            cv2.putText(frame, ' '.join(sentence), (3, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             if frame.shape[1] != img.shape[1]:
                 img = cv2.resize(img, (frame.shape[1], img.shape[0]))
             if frame.dtype != img.dtype:

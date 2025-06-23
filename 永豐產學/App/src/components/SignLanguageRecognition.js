@@ -62,9 +62,7 @@ const SignLanguageRecognition = () => {
           {result ? (
             <div className="recognized-summary">
               <div className="prompt">翻譯句子：</div>
-              <div className="recognized-text">
-                <span style={{ fontSize: '32px', color: '#007bff', fontWeight: 'bold' }}>{result}</span>
-              </div>
+              <div><strong>{result}</strong></div>
             </div>
           ) : '等待辨識結果...'}
         </div>
