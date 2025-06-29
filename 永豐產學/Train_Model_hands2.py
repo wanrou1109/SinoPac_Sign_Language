@@ -15,7 +15,7 @@ def start():
         'ten_thousand', 'yes'
     ])
 
-
+    
     new_model = load_model('App/Model/model_hands4_v2.keras')
     mp_holistic = mp.solutions.holistic
     mp_drawing = mp.solutions.drawing_utils
@@ -45,6 +45,8 @@ def start():
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            frame = cv2.flip(frame, 1)
 
             results = mediapipe_detection(frame, holistic)
             draw_styled_landmarks(frame, results)

@@ -51,21 +51,8 @@ const SignLanguageRecognition = () => {
           style={{
             border: '1px solid #ccc',
             borderRadius: '8px',
-            transform: 'scaleX(-1)'  // 加入水平反轉
           }}
         />
-      </div>
-
-      <div className="streaming-result-box">
-        <h3>翻譯結果：</h3>
-        <div ref={resultBoxRef} className={`result-text ${result ? 'has-content' : ''}`}>
-          {result ? (
-            <div className="recognized-summary">
-              <div className="prompt">翻譯句子：</div>
-              <div><strong>{result}</strong></div>
-            </div>
-          ) : '等待辨識結果...'}
-        </div>
       </div>
 
       <div className='action-bar'>

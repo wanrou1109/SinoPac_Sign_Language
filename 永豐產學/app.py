@@ -77,11 +77,13 @@ def favicon():
 @app.route('/handlanRes', methods=['POST'])
 def handle_result():
     if request.method == 'POST':
-        data = request.form  
-        result = data.get('result')  
+        data = request.form
+        result = data.get('result')
         global trans_res
         trans_res = result
         print('Received result:', result)
+        return jsonify({"status": "ok"})  # ✅ 避免 500 error
+
 
 
 
@@ -120,11 +122,13 @@ def video_feed():
 @app.route('/getRes', methods=['GET'])
 def getRes():
     global trans_res
-    msg = trans_res if trans_res is not None else ""
+    msg = trans_res if trans_res else ""
+    trans_res = None  # ✅ 讀取後清空（這樣前端會先拿到，不會搶輸句子清除）
     response = jsonify({"msg": msg})
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
+
 
 if __name__ == '__main__':
     app.config['UPLOAD_FOLDER'] = 'uploads'
