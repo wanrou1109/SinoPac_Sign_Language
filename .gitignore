@@ -2,7 +2,9 @@
 __pycache__/
 *.py[cod]
 *.so
-*.ipynb_checkpoints
+
+# ===== Jupyter Notebook =====
+.ipynb_checkpoints/
 
 # ===== MacOS 系統檔案 =====
 .DS_Store
@@ -18,7 +20,7 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-App/node_modules/.cache/.eslintcache
+**/.eslintcache
 
 # ===== 圖像與影片等大檔案（避免誤加）=====
 *.gif
@@ -32,5 +34,8 @@ App/node_modules/.cache/.eslintcache
 coverage/
 *.lcov
 
-# ===== Jupyter Notebook 的 output / metadata（視情況）=====
-.ipynb_checkpoints/
+# ===== 一般暫存 / Git 衝突檔案 =====
+*.swp
+*.bak
+*.tmp
+*.orig
