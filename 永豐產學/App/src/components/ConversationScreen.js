@@ -89,7 +89,7 @@ const ConversationScreen = () => {
         if (isUnityLoaded && unityInstanceRef.current && text.trim()) {
             try {
                 console.log('播放手語動畫：', text);
-                unityInstanceRef.current.SendMessage("SignPlayer", "PlaySign", text);
+                unityInstanceRef.current.SendMessage("Mannequin_Female", "PlaySign", text);
             } catch (error) {
                 console.error('播放手語動畫失敗：', error);
             }
