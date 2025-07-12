@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 
 const app = express();
 const PORT = 8080;
-const pythonPath = process.env.PYTHON_PATH || 'python3';
+const pythonPath = process.env.PYTHON_PATH || 'python';
 
 // 啟用 CORS
 app.use(cors());
@@ -99,7 +99,13 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
   const pythonProcess = spawn(pythonPath, [
     path.join(__dirname, 'speech_recognition', 'speech_to_text.py'), 
     req.file.path
-  ]);
+  ], {
+    shell: true,
+    env: {
+      ...process.env,
+      PYTHONIOENCODING: 'utf-8'
+    }
+  });
   
   let result = '';
   let error = '';
@@ -115,12 +121,49 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
   
   pythonProcess.on('close', (code) => {
     console.log(`Python 進程退出，代碼: ${code}`);
-    const transcription = JSON.parse(result);
-    return res.status(200).json({
-      success: true,
-      text: transcription.text,
-      signLanguage: transcription.signLanguage
-    });
+    if (code !== 0) {
+      return res.status(500).json({ success: false, message: 'Python 執行失敗' });
+    }
+    try {
+      const transcription = JSON.parse(result);
+
+      // 呼叫 translate_to_sign.py，將 Whisper 辨識出的文字送給 LLM 處理
+      const llmScript = path.join(__dirname, 'speech_recognition', 'translate_to_sign.py');
+      const llmProcess = spawn(pythonPath, [ llmScript, transcription.text], {
+        shell:true,
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: 'utf-8'
+        }
+      });
+
+      llmProcess.stdout.on('data', (chunk) => {
+        console.log('【LLM 轉手語輸出】', chunk.toString());
+      });
+      llmProcess.stderr.on('data', chunk => {
+        const msg = chunk.toString();
+        // 如果是 jieba 正常加载信息，就忽略
+        if (/^Building prefix dict from the default dictionary/.test(msg)
+            || msg.includes('Loading model from cache')) {
+          return;
+        }
+        // 其他内容才当做错误打印
+        console.error('【LLM 錯誤】', msg);
+      });
+      llmProcess.on('close', (code) => {
+        console.log(`LLM 進程退出，代碼: ${code}`);
+      });
+      // LLM 結束呼叫
+
+      return res.status(200).json({
+        success: true,
+        text: transcription.text,
+        signLanguage: transcription.signLanguage
+      });
+    } catch (e) {
+      console.error('解析 Python 回傳 JSON 失敗:', e, result);
+      return res.status(500).json({ success: false, message: '解析結果失敗' });
+    }
   });
 });
 
