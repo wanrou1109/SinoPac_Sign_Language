@@ -7,6 +7,7 @@ def start():
     from PIL import ImageFont, ImageDraw, Image
     from collections import Counter
     from tensorflow.keras.models import load_model
+    from sign_to_natural import translate_to_natural as llm_translate_to_natural
 
     actions = np.array([
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -75,11 +76,16 @@ def start():
             current_time = time.time()
             if alarm_set and current_time - last_updated_time >= 10:
                 trans_result = ' '.join(sentence)
-                print('---結果---', trans_result)
+                print('---手語語序---', trans_result)
                 try:
+                    natural_sentence = llm_translate_to_natural(trans_result)
+                    print('---自然語序---', natural_sentence)
+
                     requests.post('http://localhost:5000/handlanRes', data={'result': trans_result})
+                    requests.post('http://localhost:5000/naturalRes', data={'result': natural_sentence})
+
                 except Exception as e:
-                    print("POST error:", e)
+                    print("LLM 轉換或 POST 發生錯誤:", e)
                 alarm_set = False
                 sequence = []
                 sentence = []
