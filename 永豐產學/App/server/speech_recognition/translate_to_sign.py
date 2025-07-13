@@ -11,14 +11,14 @@ import re
 from zhconv import convert
 from langdetect import detect
 from deep_translator import GoogleTranslator
+from dotenv import load_dotenv
 
 
 # === 🔑 設定 OpenRouter (OpenAI) API Key 與參數 ===
-api_key = "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"
+# === 🔑 載入環境變數 ===
+load_dotenv()
+api_key = os.getenv("OPENROUTER_API_KEY")
 base_url = "https://openrouter.ai/api/v1"
-# OpenRouter 要放到 OPENAI_API_KEY，否則 client 會噴錯
-# openai.api_key = api_key
-# openai.api_base = base_url
 client = OpenAI(api_key=api_key, base_url=base_url)
 
 # === 載入並拆分劇本語料 ===
