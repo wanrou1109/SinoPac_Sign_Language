@@ -1,7 +1,7 @@
 import os
 import sys
 import jieba
-import openai
+from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from docx import Document
 import faiss
@@ -17,9 +17,9 @@ from deep_translator import GoogleTranslator
 api_key = "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"
 base_url = "https://openrouter.ai/api/v1"
 # OpenRouter 要放到 OPENAI_API_KEY，否則 client 會噴錯
-openai.api_key = api_key
-openai.api_base = base_url
-client = openai
+# openai.api_key = api_key
+# openai.api_base = base_url
+client = OpenAI(api_key=api_key, base_url=base_url)
 
 # === 載入並拆分劇本語料 ===
 def load_corpus_from_docx(file_path: str, max_len: int = 80) -> List[str]:
@@ -103,7 +103,7 @@ def translate_sentence(user_message: str) -> str:
         {"role": "system", "content": system_prompt},
         {"role": "user",   "content": user_message}
     ]
-    resp = client.ChatCompletion.create(
+    resp = client.chat.completions.create(
         model="qwen/qwen2.5-vl-72b-instruct:free",
         messages=messages
     )
