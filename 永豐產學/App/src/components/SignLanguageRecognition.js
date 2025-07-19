@@ -16,7 +16,7 @@ const SignLanguageRecognition = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5050/getRes');
+        const res = await fetch('http://localhost:5050/getRes', { mode: 'cors' });
         const data = await res.json();
         if (data.msg && data.msg !== result) {
           console.log("後端辨識結果：", data.msg);
@@ -44,13 +44,16 @@ const SignLanguageRecognition = () => {
         <h3>後端辨識串流畫面：</h3>
         <img
           src="http://localhost:5050/video_feed"
-          crossOrigin="anonymous"
           alt="Video Feed"
           width="640"
           height="480"
           style={{
             border: '1px solid #ccc',
             borderRadius: '8px',
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            console.error('無法載入串流影像');
           }}
         />
       </div>

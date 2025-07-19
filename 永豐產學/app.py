@@ -12,7 +12,7 @@ import threading
 
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, origins=["http://localhost:3000"]) 
 outputFrame = None
 lock = threading.Lock()
 trans_res = None
