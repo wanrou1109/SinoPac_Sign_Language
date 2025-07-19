@@ -1,4 +1,8 @@
 def start():
+    """
+    Generator function that captures video frames, processes hand sign language recognition,
+    and yields MJPEG frames suitable for streaming in a Flask response.
+    """
     import cv2
     import numpy as np
     import time
@@ -7,7 +11,7 @@ def start():
     from PIL import ImageFont, ImageDraw, Image
     from collections import Counter
     from tensorflow.keras.models import load_model
-    from sign_to_natural import translate_to_natural as llm_translate_to_natural
+    from llm_translate_to_natural import translate_to_natural as llm_translate_to_natural
 
     actions = np.array([
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -40,6 +44,7 @@ def start():
     threshold = 0.7
     alarm_set = False
     trans_result = ""
+    last_updated_time = 0
 
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         while cap.isOpened():
@@ -62,7 +67,7 @@ def start():
                 if res[np.argmax(res)] > threshold:
                     predictions.append(np.argmax(res))
 
-                if Counter(predictions[-10:]).most_common(1)[0][0] == np.argmax(res):
+                if len(predictions) >= 10 and Counter(predictions[-10:]).most_common(1)[0][0] == np.argmax(res):
                     current_action = actions[np.argmax(res)]
                     if len(sentence) == 0 or current_action != sentence[-1]:
                         sentence.append(current_action)
@@ -110,13 +115,18 @@ def start():
 
             output_frame = cv2.vconcat([frame, img])
             ret, buffer = cv2.imencode('.jpg', output_frame)
-            frame = buffer.tobytes()
+            if not ret:
+                continue
+            frame_bytes = buffer.tobytes()
 
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            try:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            except GeneratorExit:
+                break
 
             if cv2.waitKey(10) & 0xFF == ord('x'):
                 break
 
-        cap.release()
-        cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
