@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 from openai import OpenAI
 
 # === 🔐 載入 API 金鑰與模型設定 ===
-load_dotenv()
+load_dotenv(dotenv_path="App/.env")
 api_key = os.getenv("OPENROUTER_API_KEY")
 base_url = "https://openrouter.ai/api/v1"
 client = OpenAI(api_key=api_key, base_url=base_url)
