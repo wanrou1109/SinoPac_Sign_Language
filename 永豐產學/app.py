@@ -12,7 +12,7 @@ import threading
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"]) 
+CORS(app, origins="http://localhost:3000", supports_credentials=True)
 outputFrame = None
 lock = threading.Lock()
 trans_res = None
@@ -72,7 +72,6 @@ def process_pdf(input_path, output_path, type, level):
 
 
 @app.route('/favicon.ico')
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def favicon():
     return '', 204
 
@@ -88,7 +87,6 @@ def handle_result():
 
 # LLM 轉換結果
 @app.route('/naturalRes', methods=['POST'])
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def handle_natural_res():
     if request.method == 'POST':
         data = request.form
@@ -97,7 +95,6 @@ def handle_natural_res():
         natural_language_result = result  # 存儲LLM轉換後的中文結果
         print('LLM轉換後的中文結果:', result)
         response = jsonify({"status": "ok"})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
 
@@ -121,24 +118,20 @@ def process_pdf_route():
 from flask import make_response
 
 @app.route('/video_feed')
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def video_feed():
     try:
         # 直接將 start() 作為 Response 的資料來源
         response = Response(start(), mimetype='multipart/x-mixed-replace; boundary=frame')
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
     except Exception as e:
         print(f"Video stream error: {e}")
         error_response = make_response("Video stream error", 500)
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         error_response.headers.add('Access-Control-Allow-Credentials', 'true')
         return error_response
  
 # 優先返回 LLM 轉換結果   
 @app.route('/getRes', methods=['GET'])
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def getRes():
     global trans_res, natural_language_result
     
@@ -154,7 +147,6 @@ def getRes():
         msg = ""
     
     response = jsonify({"msg": msg})
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
