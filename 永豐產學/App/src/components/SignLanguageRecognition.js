@@ -20,7 +20,7 @@ const SignLanguageRecognition = () => {
         const res = await fetch('http://localhost:5050/getRes', { mode: 'cors' });
         const data = await res.json();
 
-        if (data.msg && data.msg !== result && data.msg.trim !== '') {
+        if (data.msg && data.msg !== result && data.msg.trim() !== '') {
           // console.log("後端辨識結果：", data.msg);
           console.log('LLM 轉換結果：', data.msg);
           setResult(data.msg);
