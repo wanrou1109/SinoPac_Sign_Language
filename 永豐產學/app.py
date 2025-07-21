@@ -144,18 +144,16 @@ def getRes():
     
     if natural_language_result:
         msg = natural_language_result
-        sender = 'customer'
         natural_language_result = None  # 讀取後清空
         print(f"返回LLM轉換的中文結果: {msg}")
     elif trans_res:
         msg = trans_res
-        sender = 'customer'
         trans_res = None  # 讀取後清空
         print(f"返回原始手語結果: {msg}")
     else:
         msg = ""
     
-    response = jsonify({"msg": msg, "sender": sender})
+    response = jsonify({"msg": msg})
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
