@@ -12,10 +12,12 @@ import threading
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"]) 
+CORS(app, origins="http://localhost:3000", supports_credentials=True)
 outputFrame = None
 lock = threading.Lock()
 trans_res = None
+natural_language_result = None
+
 def process_pdf(input_path, output_path, type, level):
     # 打開PDF
     pdf_document = fitz.open(input_path)
@@ -70,7 +72,6 @@ def process_pdf(input_path, output_path, type, level):
 
 
 @app.route('/favicon.ico')
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def favicon():
     return '', 204
 
@@ -84,7 +85,18 @@ def handle_result():
         print('Received result:', result)
         return jsonify({"status": "ok"})  # ✅ 避免 500 error
 
-
+# LLM 轉換結果
+@app.route('/naturalRes', methods=['POST'])
+def handle_natural_res():
+    if request.method == 'POST':
+        data = request.form
+        result = data.get('result')
+        global natural_language_result
+        natural_language_result = result  # 存儲LLM轉換後的中文結果
+        print('LLM轉換後的中文結果:', result)
+        response = jsonify({"status": "ok"})
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 
 @app.route('/process_pdf', methods=['POST'])
@@ -106,28 +118,35 @@ def process_pdf_route():
 from flask import make_response
 
 @app.route('/video_feed')
-@cross_origin(origins='http://localhost:3000', supports_credentials=True)
 def video_feed():
     try:
         # 直接將 start() 作為 Response 的資料來源
         response = Response(start(), mimetype='multipart/x-mixed-replace; boundary=frame')
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
     except Exception as e:
         print(f"Video stream error: {e}")
         error_response = make_response("Video stream error", 500)
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         error_response.headers.add('Access-Control-Allow-Credentials', 'true')
         return error_response
-    
+ 
+# 優先返回 LLM 轉換結果   
 @app.route('/getRes', methods=['GET'])
 def getRes():
-    global trans_res
-    msg = trans_res if trans_res else ""
-    trans_res = None  # ✅ 讀取後清空（這樣前端會先拿到，不會搶輸句子清除）
+    global trans_res, natural_language_result
+    
+    if natural_language_result:
+        msg = natural_language_result
+        natural_language_result = None  # 讀取後清空
+        print(f"返回LLM轉換的中文結果: {msg}")
+    elif trans_res:
+        msg = trans_res
+        trans_res = None  # 讀取後清空
+        print(f"返回原始手語結果: {msg}")
+    else:
+        msg = ""
+    
     response = jsonify({"msg": msg})
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
@@ -135,16 +154,3 @@ def getRes():
 if __name__ == '__main__':
     app.config['UPLOAD_FOLDER'] = 'uploads'
     app.run(host='0.0.0.0', port=5050)
-
-
-# Move route definition for /naturalRes below app = Flask(__name__)
-@app.route('/naturalRes', methods=['POST'])
-def handle_natural_res():
-    if request.method == 'POST':
-        data = request.form
-        result = data.get('result')
-        print('Received natural language result:', result)
-        response = jsonify({"status": "ok"})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response

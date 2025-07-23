@@ -86,8 +86,8 @@ def start():
                     natural_sentence = llm_translate_to_natural(trans_result)
                     print('---自然語序---', natural_sentence)
 
-                    requests.post('http://localhost:5000/handlanRes', data={'result': trans_result})
-                    requests.post('http://localhost:5000/naturalRes', data={'result': natural_sentence})
+                    requests.post('http://localhost:5050/handlanRes', data={'result': trans_result})
+                    requests.post('http://localhost:5050/naturalRes', data={'result': natural_sentence})
 
                 except Exception as e:
                     print("LLM 轉換或 POST 發生錯誤:", e)
