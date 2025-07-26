@@ -149,33 +149,16 @@ const ConversationScreen = () => {
         }
     };
 
-    // 準備錄音狀態設置
-    const prepareForRecording = () => {
-        setTranscriptText('');
-        console.log('準備語音錄音...');
-        setIsSpeechRecording(true);
-    };
-
-    // 開始或停止錄音
-    const toggleRecording = () => {
-        if (!isRecordingActive) {
-            // 開始錄音
-            startRecording();
-        } else {
-            // 停止錄音並添加結果到對話中
-            stopRecordingAndAddToChat();
-        }
-    };
-
     // 開始錄音
     const startRecording = async () => {
+        setTranscriptText('');
+        console.log('直接開始語音錄音...');
+        setIsSpeechRecording(true);
         setIsRecordingActive(true);
-        console.log('開始語音錄音...');
 
         try {
             // request 麥克風
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
             const recorder = new MediaRecorder(stream);
             const audioChunks = [];
 
@@ -192,25 +175,28 @@ const ConversationScreen = () => {
                 console.log('錄音停止，收集了', audioChunks.length, '個音頻塊');
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 console.log('創建音頻 Blob:', audioBlob.size, 'bytes');
-                // 加載中
                 setTranscriptText('處理中...');
-                // 送到後端
                 await processAudioWithWhisper(audioBlob);
-                // 停止所有音訊軌道
                 stream.getTracks().forEach(track => track.stop());
             };
 
             // 開始錄音
-            recorder.start(1000);
-
-            // 保存 recorder 參考，以便稍後停止
+            recorder.start(300);
             setMediaRecorder(recorder);
         } catch (error) {
             console.error('開始錄音時發生錯誤：', error);
             setIsRecordingActive(false);
+            setIsSpeechRecording(false);
             alert('無法啟動麥克風，請確認是否授予麥克風權限。');
         }
     }; 
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        setIsRecordingActive(false);
+    }
 
     const processAudioWithWhisper = async (audioBlob) => {
         try {
@@ -265,16 +251,6 @@ const ConversationScreen = () => {
         }
     };
 
-    // 停止錄音並添加結果到對話中
-    const stopRecordingAndAddToChat = () => {
-        // 停止 MediaRecorder
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        //  實際訊息添加在 processAudioWithWhisper 成功處理後進行，因此只需設定狀態
-        setIsRecordingActive(false);
-    };
-
     // 手語辨識
     const handleSignLanguageRecognition = () => {
         navigate('/sign-language-recognition');
@@ -304,12 +280,12 @@ const ConversationScreen = () => {
     };
 
     // 重新手語辨識
-    const handleRecordMessage = (messageID, sender) => {
+    const handleRecordMessage = async (messageID, sender) => {
         // 行員或聾人
         if(sender === 'staff') {
-            // 語音辨識：直接進入錄音模式並設置要替換的訊息ID
-            prepareForRecording();
-            setReplacingMessageID(messageID); 
+            // 語音辨識：直接開始錄音並設置要替換的訊息ID
+            setReplacingMessageID(messageID);
+            await startRecording(); // 改為直接開始錄音
         } else {
             // 手語辨識：轉跳手語頁面
             navigate('/sign-language-recognition', {state: {messageID}});
@@ -341,7 +317,7 @@ const ConversationScreen = () => {
             {/* Unity */}
             <div className="unity-sign-animation-container">
                 <div className="unity-header">
-                    <h3>Sign Language Animation</h3>
+                    <h3>語音轉手語動畫</h3>
                     {unityError && <div className="unity-error">錯誤: {unityError}</div>}
                     {!isUnityLoaded && !unityError && <div className="unity-loading">載入中...</div>}
                 </div>
@@ -443,7 +419,7 @@ const ConversationScreen = () => {
                 {isSpeechRecording ? (
                     <button 
                         className={`custom-record-button ${isRecordingActive ? 'recording-active' : ''}`}
-                        onClick={toggleRecording}
+                        onClick={stopRecording}
                     >
                         <div className='button-inner'></div>
                     </button>
@@ -455,7 +431,7 @@ const ConversationScreen = () => {
 
                 <button 
                     className={`speech-button ${isSpeechRecording ? 'disabled-button' : ''}`} 
-                    onClick={!isSpeechRecording ? prepareForRecording : undefined}
+                    onClick={!isSpeechRecording ? startRecording : undefined}
                     disabled={isSpeechRecording}
                 >
                     語音辨識
