@@ -20,7 +20,6 @@ const ConversationScreen = () => {
     const [ isPlayingSign, setIsPlayingSign ] = useState(false);
     const [ playInterval, setPlayInterval ] = useState(null);
 
-
     // Unity
     const unityCanvasRef = useRef(null);
     const unityInstanceRef = useRef(null);
@@ -31,14 +30,12 @@ const ConversationScreen = () => {
     useEffect(() => {
         const loadUnity = async () => {
             try {
-                // 等待Canvas元素準備好
                 if (!unityCanvasRef.current) {
                     console.warn('Canvas元素尚未準備好，延遲載入Unity');
-                    setTimeout(loadUnity, 100); // 100ms後重試
+                    setTimeout(loadUnity, 100); 
                     return;
                 }
 
-                // 動態載入Unity loader
                 const script = document.createElement('script');
                 script.src = 'SignPlayer/Build/SignPlayer.loader.js';
                 script.onload = () => {
@@ -53,7 +50,6 @@ const ConversationScreen = () => {
                         devicePixelRatio: 1
                     };
 
-                    // 確保Canvas存在才初始化Unity
                     if (unityCanvasRef.current) {
                         window.createUnityInstance(unityCanvasRef.current, config).then((unityInstance) => {
                             unityInstanceRef.current = unityInstance;
@@ -90,7 +86,6 @@ const ConversationScreen = () => {
         // 延遲一下再載入，確保DOM已經渲染完成
         const timer = setTimeout(loadUnity, 100);
 
-        // 清理
         return () => {
             clearTimeout(timer);
             if (unityInstanceRef.current) {
@@ -103,15 +98,16 @@ const ConversationScreen = () => {
         };
     }, []);
 
+    // 獲取手語語序
     const fetchSignWordsAndPlay = async () => {
         try {
             console.log('正在獲取手語語序...');
-            const response = await fetch('http://localhost:5050/getSignWords');
+            const response = await fetch('http://localhost:5050/getSignWords'); 
             const data = await response.json();
             
             if (data.msg && data.msg.trim()) {
                 console.log('獲取到手語語序:', data.msg);
-                playSignAnimation(data.msg);
+                playSignAnimation(data.msg); 
             } else {
                 console.log('沒有獲取到手語語序');
             }
@@ -135,9 +131,8 @@ const ConversationScreen = () => {
                     });
                 };
                 
-                playOneSequence(); // 立即播放第一次
+                playOneSequence(); 
                 
-                // 計算完整序列時間、設置重複播放（直到有新的 staff 訊息）
                 const signWords = signSequence.split(' ').filter(word => word.trim());
                 const totalTime = signWords.length * 1500;
                 
@@ -156,7 +151,7 @@ const ConversationScreen = () => {
         }
     };
 
-    // 監聽conversations變化，當有新的 staff 訊息時播放手語動畫
+    // 監聽conversations變化，當有新的staff訊息時播放手語動畫
     useEffect(() => {
         if (conversations.length > 0 && isUnityLoaded) {
             const lastMessage = conversations[conversations.length - 1];
@@ -178,7 +173,6 @@ const ConversationScreen = () => {
             }
         }
     }, [conversations, isUnityLoaded]);
-
 
     // 使用 useMemo 計算每一方最後一條訊息的索引
     const lastIndices = useMemo(() => {
@@ -217,16 +211,33 @@ const ConversationScreen = () => {
         }
     };
 
+    // 準備錄音狀態設置
+    const prepareForRecording = () => {
+        console.log('準備錄音, replacingMessageID:', replacingMessageID);
+        setTranscriptText('');
+        setIsSpeechRecording(true);
+    };
+
+    // 開始或停止錄音
+    const toggleRecording = () => {
+        if (!isRecordingActive) {
+            // 開始錄音
+            startRecording();
+        } else {
+            // 停止錄音並添加結果到對話中
+            stopRecordingAndAddToChat();
+        }
+    };
+
     // 開始錄音
     const startRecording = async () => {
-        setTranscriptText('');
-        console.log('直接開始語音錄音...');
-        setIsSpeechRecording(true);
         setIsRecordingActive(true);
+        console.log('開始語音錄音, replacingMessageID:', replacingMessageID);
 
         try {
             // request 麥克風
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
             const recorder = new MediaRecorder(stream);
             const audioChunks = [];
 
@@ -243,28 +254,25 @@ const ConversationScreen = () => {
                 console.log('錄音停止，收集了', audioChunks.length, '個音頻塊');
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 console.log('創建音頻 Blob:', audioBlob.size, 'bytes');
+                // 加載中
                 setTranscriptText('處理中...');
+                // 送到後端
                 await processAudioWithWhisper(audioBlob);
+                // 停止所有音訊軌道
                 stream.getTracks().forEach(track => track.stop());
             };
 
             // 開始錄音
-            recorder.start(300);
+            recorder.start(1000);
+
+            // 保存 recorder 參考，以便稍後停止
             setMediaRecorder(recorder);
         } catch (error) {
             console.error('開始錄音時發生錯誤：', error);
             setIsRecordingActive(false);
-            setIsSpeechRecording(false);
             alert('無法啟動麥克風，請確認是否授予麥克風權限。');
         }
     }; 
-
-    const stopRecording = () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        setIsRecordingActive(false);
-    }
 
     const processAudioWithWhisper = async (audioBlob) => {
         try {
@@ -289,24 +297,30 @@ const ConversationScreen = () => {
             
             if (result.success) {
                 setTranscriptText(result.text);
-            
-                if (replacingMessageID) {
-                    // 編輯訊息
-                    editMessage(replacingMessageID, result.text);
-                    setReplacingMessageID(null);
+                
+                // 使用當前的 replacingMessageID 值
+                const currentReplacingID = replacingMessageID;
+                
+                if (currentReplacingID) {
+                    // 確實是要替換現有訊息
+                    console.log('替換訊息 ID:', currentReplacingID);
+                    editMessage(currentReplacingID, result.text);
+                    // 播放替換後的手語動畫
+                    playSignAnimation(result.text);
                 } else {
-                    // 添加新訊息到對話中
-                    // 如果 result.text 改成 result.signLanguage 就會是手語語序
+                    // 只有在沒有要替換的情況下才新增
+                    console.log('新增訊息');
                     const newMessage = {
                         id: Date.now().toString(),
                         text: result.text,
                         sender: 'staff',
                         timestamp: new Date().toISOString()
                     };
-                    
                     setConversations(prev => [...prev, newMessage]);
                 }
-
+                
+                // 重置狀態
+                setReplacingMessageID(null);
                 setIsSpeechRecording(false);
 
             } else {
@@ -317,6 +331,17 @@ const ConversationScreen = () => {
             console.error('處理音頻時發生錯誤:', error);
             setTranscriptText('處理音頻時發生錯誤，請重試。');
         }
+    };
+
+    // 停止錄音並添加結果到對話中
+    const stopRecordingAndAddToChat = () => {
+        console.log('停止錄音, replacingMessageID:', replacingMessageID);
+        // 停止 MediaRecorder
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        //  實際訊息添加在 processAudioWithWhisper 成功處理後進行，因此只需設定狀態
+        setIsRecordingActive(false);
     };
 
     // 手語辨識
@@ -336,6 +361,11 @@ const ConversationScreen = () => {
         if (editingMessageID && editingText.trim()) {
             // 編輯訊息
             editMessage(editingMessageID, editingText.trim());
+            // 如果是staff的訊息，播放手語動畫
+            const message = conversations.find(msg => msg.id === editingMessageID);
+            if (message && message.sender === 'staff') {
+                playSignAnimation(editingText.trim());
+            }
             setEditingMessageID(null);
             setEditingText('');
         }
@@ -345,15 +375,20 @@ const ConversationScreen = () => {
     const handleCancelEdit = () => {
         setEditingMessageID(null);
         setEditingText('');
+        setReplacingMessageID(null); // 清空替換ID
     };
 
-    // 重新手語辨識
-    const handleRecordMessage = async (messageID, sender) => {
-        // 行員或聾人
+    // 重新手語辨識 - 修正版本
+    const handleRecordMessage = (messageID, sender) => {
+        console.log('重新錄製訊息, messageID:', messageID, 'sender:', sender);
+        
         if(sender === 'staff') {
-            // 語音辨識：直接開始錄音並設置要替換的訊息ID
+            // 先設置要替換的訊息ID，再進入錄音模式
             setReplacingMessageID(messageID);
-            await startRecording(); // 改為直接開始錄音
+            // 使用 setTimeout 確保 state 更新完成
+            setTimeout(() => {
+                prepareForRecording();
+            }, 0);
         } else {
             // 手語辨識：轉跳手語頁面
             navigate('/sign-language-recognition', {state: {messageID}});
@@ -371,6 +406,8 @@ const ConversationScreen = () => {
             if (window.speechSimInterval) {
                 clearInterval(window.speechSimInterval);
             }
+            // 清理時也要重置 replacingMessageID
+            setReplacingMessageID(null);
         };
     }, []);
 
@@ -385,7 +422,7 @@ const ConversationScreen = () => {
             {/* Unity */}
             <div className="unity-sign-animation-container">
                 <div className="unity-header">
-                    <h3>語音轉手語動畫</h3>
+                    <h3>Sign Language Animation</h3>
                     {unityError && <div className="unity-error">錯誤: {unityError}</div>}
                     {!isUnityLoaded && !unityError && <div className="unity-loading">載入中...</div>}
                 </div>
@@ -487,7 +524,7 @@ const ConversationScreen = () => {
                 {isSpeechRecording ? (
                     <button 
                         className={`custom-record-button ${isRecordingActive ? 'recording-active' : ''}`}
-                        onClick={stopRecording}
+                        onClick={toggleRecording}
                     >
                         <div className='button-inner'></div>
                     </button>
@@ -499,7 +536,7 @@ const ConversationScreen = () => {
 
                 <button 
                     className={`speech-button ${isSpeechRecording ? 'disabled-button' : ''}`} 
-                    onClick={!isSpeechRecording ? startRecording : undefined}
+                    onClick={!isSpeechRecording ? prepareForRecording : undefined}
                     disabled={isSpeechRecording}
                 >
                     語音辨識
