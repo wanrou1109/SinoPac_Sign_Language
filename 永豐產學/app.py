@@ -150,6 +150,20 @@ def getRes():
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
+# 獲取手語語序
+@app.route('/getSignWords', methods=['GET'])
+def getSignWords():
+    global trans_res
+    if trans_res:
+        msg = trans_res
+        trans_res = None  # 讀取後清空
+        print(f"返回手語語序: {msg}")
+        response = jsonify({"msg": msg})
+    else:
+        response = jsonify({"msg": ""})
+    
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 if __name__ == '__main__':
     app.config['UPLOAD_FOLDER'] = 'uploads'

@@ -13,9 +13,13 @@ const ConversationScreen = () => {
 
     const [ isSpeechRecording, setIsSpeechRecording ] = useState(false);
     const [ transcriptText, setTranscriptText ] = useState('');
-    const [isRecordingActive, setIsRecordingActive] = useState(false);
-    const [mediaRecorder, setMediaRecorder] = useState(null);
-    const [replacingMessageID, setReplacingMessageID] = useState(null);
+    const [ isRecordingActive, setIsRecordingActive ] = useState(false);
+    const [ mediaRecorder, setMediaRecorder ] = useState(null);
+    const [ replacingMessageID, setReplacingMessageID ] = useState(null);
+
+    const [ isPlayingSign, setIsPlayingSign ] = useState(false);
+    const [ playInterval, setPlayInterval ] = useState(null);
+
 
     // Unity
     const unityCanvasRef = useRef(null);
@@ -27,6 +31,13 @@ const ConversationScreen = () => {
     useEffect(() => {
         const loadUnity = async () => {
             try {
+                // 等待Canvas元素準備好
+                if (!unityCanvasRef.current) {
+                    console.warn('Canvas元素尚未準備好，延遲載入Unity');
+                    setTimeout(loadUnity, 100); // 100ms後重試
+                    return;
+                }
+
                 // 動態載入Unity loader
                 const script = document.createElement('script');
                 script.src = 'SignPlayer/Build/SignPlayer.loader.js';
@@ -42,14 +53,20 @@ const ConversationScreen = () => {
                         devicePixelRatio: 1
                     };
 
-                    window.createUnityInstance(unityCanvasRef.current, config).then((unityInstance) => {
-                        unityInstanceRef.current = unityInstance;
-                        setIsUnityLoaded(true);
-                        console.log('Unity手語播放器載入成功');
-                    }).catch((message) => {
-                        console.error("Unity載入失敗：", message);
-                        setUnityError("Unity載入失敗：" + message);
-                    });
+                    // 確保Canvas存在才初始化Unity
+                    if (unityCanvasRef.current) {
+                        window.createUnityInstance(unityCanvasRef.current, config).then((unityInstance) => {
+                            unityInstanceRef.current = unityInstance;
+                            setIsUnityLoaded(true);
+                            console.log('Unity手語播放器載入成功');
+                        }).catch((message) => {
+                            console.error("Unity載入失敗：", message);
+                            setUnityError("Unity載入失敗：" + message);
+                        });
+                    } else {
+                        console.error('Canvas元素不存在，無法初始化Unity');
+                        setUnityError('Canvas元素不存在，無法初始化Unity');
+                    }
                 };
                 
                 script.onerror = () => {
@@ -70,10 +87,12 @@ const ConversationScreen = () => {
             }
         };
 
-        loadUnity();
+        // 延遲一下再載入，確保DOM已經渲染完成
+        const timer = setTimeout(loadUnity, 100);
 
         // 清理
         return () => {
+            clearTimeout(timer);
             if (unityInstanceRef.current) {
                 try {
                     unityInstanceRef.current.Quit();
@@ -84,28 +103,77 @@ const ConversationScreen = () => {
         };
     }, []);
 
-    // 播放手語動畫的函數
-    const playSignAnimation = (text) => {
-        if (isUnityLoaded && unityInstanceRef.current && text.trim()) {
-            try {
-                console.log('播放手語動畫：', text);
-                unityInstanceRef.current.SendMessage("Mannequin_Female", "PlaySign", text);
-            } catch (error) {
-                console.error('播放手語動畫失敗：', error);
+    const fetchSignWordsAndPlay = async () => {
+        try {
+            console.log('正在獲取手語語序...');
+            const response = await fetch('http://localhost:5050/getSignWords');
+            const data = await response.json();
+            
+            if (data.msg && data.msg.trim()) {
+                console.log('獲取到手語語序:', data.msg);
+                playSignAnimation(data.msg);
+            } else {
+                console.log('沒有獲取到手語語序');
             }
-        } else {
-            console.warn('Unity未載入或文字為空，無法播放手語動畫');
+        } catch (error) {
+            console.error('獲取手語語序失敗:', error);
         }
     };
 
-    // 監聽conversations變化，當有新的staff訊息時播放手語動畫
+    // 播放手語動畫的函數
+    const playSignAnimation = (signSequence) => {
+        if (isUnityLoaded && unityInstanceRef.current && signSequence.trim()) {
+            try {
+                const playOneSequence = () => {
+                    const signWords = signSequence.split(' ').filter(word => word.trim());
+                    signWords.forEach((word, index) => {
+                        setTimeout(() => {
+                            if (unityInstanceRef.current && isPlayingSign) {
+                                unityInstanceRef.current.SendMessage("Mannequin_Female", "PlaySign", word);
+                            }
+                        }, index * 1500);
+                    });
+                };
+                
+                playOneSequence(); // 立即播放第一次
+                
+                // 計算完整序列時間、設置重複播放（直到有新的 staff 訊息）
+                const signWords = signSequence.split(' ').filter(word => word.trim());
+                const totalTime = signWords.length * 1500;
+                
+                const interval = setInterval(() => {
+                    if (isPlayingSign) {
+                        playOneSequence(); 
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, totalTime);
+                
+                setPlayInterval(interval);
+            } catch (error) {
+                console.error('播放手語動畫失敗:', error);
+            }
+        }
+    };
+
+    // 監聽conversations變化，當有新的 staff 訊息時播放手語動畫
     useEffect(() => {
-        if (conversations.length > 0) {
+        if (conversations.length > 0 && isUnityLoaded) {
             const lastMessage = conversations[conversations.length - 1];
-            if (lastMessage.sender === 'staff' && lastMessage.text) {
-                // 延遲一下播放，確保動畫系統準備好
-                setTimeout(() => {
-                    playSignAnimation(lastMessage.text);
+            
+            // 加上安全檢查
+            if (lastMessage && lastMessage.sender === 'staff' && lastMessage.text) {
+                console.log('檢測到新的staff訊息，準備播放手語:', lastMessage.text);
+                
+                // 停止之前的播放
+                if (playInterval) {
+                    clearInterval(playInterval);
+                    setPlayInterval(null);
+                }
+                
+                setIsPlayingSign(true);
+                setTimeout(async () => {
+                    await fetchSignWordsAndPlay();
                 }, 500);
             }
         }
