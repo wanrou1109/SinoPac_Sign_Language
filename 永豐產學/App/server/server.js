@@ -137,8 +137,11 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
         }
       });
 
+      let signLanguageText = '';
+
       llmProcess.stdout.on('data', (chunk) => {
-        console.log('【LLM 轉手語輸出】', chunk.toString());
+        signLanguageText += chunk.toString();
+        console.log('【LLM 轉手語輸出】', signLanguageText);
       });
       llmProcess.stderr.on('data', chunk => {
         const msg = chunk.toString();
@@ -152,13 +155,11 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
       });
       llmProcess.on('close', (code) => {
         console.log(`LLM 進程退出，代碼: ${code}`);
-      });
-      // LLM 結束呼叫
-
-      return res.status(200).json({
-        success: true,
-        text: transcription.text,
-        signLanguage: transcription.signLanguage
+        return res.status(200).json({
+          success: true,
+          text: transcription.text,
+          signLanguage: signLanguageText.trim()
+        });
       });
     } catch (e) {
       console.error('解析 Python 回傳 JSON 失敗:', e, result);
