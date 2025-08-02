@@ -8,33 +8,33 @@ const SignLanguageRecognition = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setConversations, editMessage, setRecognitionStatus } = useAppContext();
-  const [ result, setResult ] = useState('');
+  // const [ result, setResult ] = useState('');
   const [ isRecording, setIsRecording ] = useState(false);
   const resultBoxRef = useRef(null);
   const editMessageID = useLocation().state?.messageID || null;
 
   // 每 2 秒抓一次後端 LLM 轉換結果
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch('http://localhost:5050/getRes', { mode: 'cors' });
-        const data = await res.json();
+  // useEffect(() => {
+  //   const interval = setInterval(async () => {
+  //     try {
+  //       const res = await fetch('http://localhost:5050/getRes', { mode: 'cors' });
+  //       const data = await res.json();
 
-        if (data.msg && data.msg !== result && data.msg.trim() !== '') {
-          // console.log("後端辨識結果：", data.msg);
-          console.log('LLM 轉換結果：', data.msg);
-          setResult(data.msg);
-          handleResult(data.msg);
-        }
-      } catch (err) {
-        console.error('取得辨識結果失敗:', err);
-      }
-    }, 2000);
+  //       if (data.msg && data.msg !== result && data.msg.trim() !== '') {
+  //         // console.log("後端辨識結果：", data.msg);
+  //         console.log('LLM 轉換結果：', data.msg);
+  //         setResult(data.msg);
+  //         handleResult(data.msg);
+  //       }
+  //     } catch (err) {
+  //       console.error('取得辨識結果失敗:', err);
+  //     }
+  //   }, 2000);
 
-    return () => clearInterval(interval);
-  }, [result]);
+  //   return () => clearInterval(interval);
+  // }, [result]);
 
-  // 處理辨識結果
+  // 處理最後拿到的中文句，推到 Conversation
   const handleResult = (chineseText) => {
     try {
       if (editMessageID) {
@@ -64,11 +64,38 @@ const SignLanguageRecognition = () => {
     }
   };
 
+  // 新增：按下停止，才把手語句送到後端翻譯
+  const handleStop = async () => {
+    // 1) 停辨識、更新狀態
+    setIsRecording(false);
+    setRecognitionStatus('idle');
+
+    // 2) 一次拿到翻譯
+    try {
+      const resp = await fetch('http://localhost:5050/translateSign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 如果需要帶 buffer，可以加 { signSentence: buffer }
+        body: JSON.stringify({})
+      });
+      const data = await resp.json();
+      if (data.msg && data.msg.trim()) {
+        handleResult(data.msg);
+      }
+    } catch (err) {
+      console.error('翻譯過程錯誤:', err);
+      // 失敗也切回去，不阻塞用戶
+      navigate('/conversation');
+    }
+  };
+
+  // 傳統的「取消／返回」只切畫面，不觸發翻譯
   const handleBack = () => {
     setIsRecording(false);
     setRecognitionStatus('idle');
     navigate('/conversation');
   };
+  
 
   return (
     <div className='sign-language-recognition-screen'>
@@ -93,9 +120,9 @@ const SignLanguageRecognition = () => {
       </div>
 
       <div className='action-bar'>
-        <button className='record-button recording-active' onClick={handleBack}>
-          返回
-        </button>
+        <button className='record-button recording-active' onClick={handleStop}>
++         停止辨識並翻譯
++       </button>
       </div>
     </div>
   );

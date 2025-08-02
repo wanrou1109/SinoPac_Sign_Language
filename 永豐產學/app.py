@@ -9,6 +9,7 @@ from PIL import Image
 import io
 from Train_Model_hands2 import start
 import threading
+from llm_translate_to_natural import llm_translate_to_natural  # 或你的實際路徑
 
 
 app = Flask(__name__)
@@ -97,6 +98,21 @@ def handle_natural_res():
         response = jsonify({"status": "ok"})
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
+    
+@app.route('/translateSign', methods=['POST'])
+def translate_sign():
+    # 從前端取出傳過來的手語句子，如果沒帶就用 last_sign_sentence
+    data = request.get_json(silent=True) or {}
+    sentence = data.get('signSentence', trans_res)
+
+    # 呼叫你的 LLM 翻譯函式
+    natural = llm_translate_to_natural(sentence)
+
+    # 回傳給前端 { msg: "翻譯結果" }
+    response = jsonify({'msg': natural})
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
 
 
 @app.route('/process_pdf', methods=['POST'])
