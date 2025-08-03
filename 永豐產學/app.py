@@ -103,10 +103,21 @@ def handle_natural_res():
 def translate_sign():
     # 從前端取出傳過來的手語句子，如果沒帶就用 last_sign_sentence
     data = request.get_json(silent=True) or {}
-    sentence = data.get('signSentence', trans_res)
+
+    # 2) 優先用前端傳 signSentence；若沒傳再用上次存的 trans_res
+    sign_sentence = data.get('signSentence')
+    sentence = sign_sentence if sign_sentence else trans_res
+
+    # 3) 若還是拿不到，就回 400 或直接空字串
+    if not sentence:
+        return jsonify({'msg': ''}), 400
 
     # 呼叫你的 LLM 翻譯函式
-    natural = llm_translate_to_natural(sentence)
+    try:
+        natural = llm_translate_to_natural(sentence)
+    except Exception as e:
+        print("LLM 翻譯失敗：", e)
+        return jsonify({'msg': ''}), 500
 
     # 回傳給前端 { msg: "翻譯結果" }
     response = jsonify({'msg': natural})
