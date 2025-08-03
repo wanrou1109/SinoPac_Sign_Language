@@ -113,3 +113,5 @@ def translate_to_natural(user_message: str) -> str:
     bot_reply = resp.choices[0].message.content.strip()
     converted_reply, _ = ensure_traditional_chinese(bot_reply)
     return converted_reply
+
+llm_translate_to_natural = translate_to_natural
