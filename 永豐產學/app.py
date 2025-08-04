@@ -9,7 +9,7 @@ from PIL import Image
 import io
 from Train_Model_hands2 import start
 import threading
-from llm_translate_to_natural import llm_translate_to_natural  # 或你的實際路徑
+from llm_translate_to_natural import translate_to_natural  # 或你的實際路徑
 
 
 app = Flask(__name__)
@@ -114,7 +114,7 @@ def translate_sign():
 
     # 呼叫你的 LLM 翻譯函式
     try:
-        natural = llm_translate_to_natural(sentence)
+        natural = translate_to_natural(sentence)
     except Exception as e:
         print("LLM 翻譯失敗：", e)
         return jsonify({'msg': ''}), 500
