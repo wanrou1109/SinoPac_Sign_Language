@@ -21,6 +21,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 **/.eslintcache
+*.cache/
+
 
 # ===== 圖像與影片等大檔案（避免誤加）=====
 *.gif
