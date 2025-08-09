@@ -35,7 +35,6 @@ export const AppProvider = ({ children }) => {
 
   // 新增訊息
   const addMessage = (message, sender) => {
-    console.log('AppContext.js addMessage 被調用');
     console.log('message: ', message, ', sender: ', sender);
 
     const newId = generateNextMessageId(sender);
@@ -54,10 +53,6 @@ export const AppProvider = ({ children }) => {
 
   // 編輯現有訊息
   const editMessage = (messageId, newText) => {
-    console.log('AppContext.js addMessage 被調用');
-    console.log('target messageId: ', messageId);
-    console.log('new text: ', newText);
-
     setConversations(prev => {
       const found = prev.find(msg => msg.id === messageId);
       if (!found) {

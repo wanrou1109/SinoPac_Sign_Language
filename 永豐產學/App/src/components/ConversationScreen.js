@@ -234,7 +234,6 @@ const ConversationScreen = () => {
             
             if (result.success) {
                 setTranscriptText(result.text);
-                console.log('test: ', replaceMessageId);
 
                 if (replaceMessageId) {
                     console.log('替換 id: ', replaceMessageId);
