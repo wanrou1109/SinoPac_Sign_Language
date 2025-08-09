@@ -11,7 +11,7 @@ export const AppProvider = ({ children }) => {
   // 當前對話訊息
   const [currentMessage, setCurrentMessage] = useState('');
   
-  // 使用者類型 (staff: 行員, customer: 聽障人士)
+  // 使用者類型 (staff, customer)
   const [userType, setUserType] = useState('staff');
   
   // 辨識狀態 (idle, recording, processing)
@@ -23,26 +23,47 @@ export const AppProvider = ({ children }) => {
     comment: ''
   });
 
-  // 添加新的對話訊息
+  // messageID 固定 id 命名規則（sender + number）
+  const generateNextMessageId = (sender) => {
+    const senderMessage = conversations.filter(msg => msg.sender === sender);
+    const nextNumber = senderMessage.length + 1;
+    const newId = `${sender}-${nextNumber}`;
+    console.log(`newId: ${newId}`);
+
+    return newId;
+  }
+
+  // 新增訊息
   const addMessage = (message, sender) => {
+    console.log('message: ', message, ', sender: ', sender);
+
+    const newId = generateNextMessageId(sender);
     const newMessage = {
-      id: Date.now(),
+      id: newId,
       text: message,
       sender,
       timestamp: new Date().toISOString()
     };
     
     setConversations(prev => [...prev, newMessage]);
+    console.log('new message: ', newMessage);
+
     return newMessage.id;
   };
 
-  // 編輯現有對話訊息
-  const editMessage = (messageID, newText) => {
-    setConversations(prev => 
-      prev.map(msg => 
-        msg.id === messageID ? { ...msg, text: newText } : msg
-      )
-    );
+  // 編輯現有訊息
+  const editMessage = (messageId, newText) => {
+    setConversations(prev => {
+      const found = prev.find(msg => msg.id === messageId);
+      if (!found) {
+        console.log('cannot find: ', messageId);
+        return prev;
+      }
+
+      return prev.map(msg =>
+        msg.id === messageId ? {...msg, text: newText } : msg
+      );
+    });
   };
 
   // 切換使用者類型
@@ -70,7 +91,8 @@ export const AppProvider = ({ children }) => {
     setFeedback,
     addMessage,
     editMessage,
-    clearConversations
+    clearConversations, 
+    generateNextMessageId
   };
 
   return (

@@ -6,16 +6,15 @@ import '../styles/ConversationScreen.css';
 
 const ConversationScreen = () => {
     const navigate = useNavigate();
-    const { conversations, setConversations, editMessage } = useAppContext();
+    const { conversations, editMessage, addMessage } = useAppContext();
 
-    const [ editingMessageID, setEditingMessageID ] = useState(null);
+    const [ editingMessageId, setEditingMessageId ] = useState(null);
     const [ editingText, setEditingText ] = useState('');
 
     const [ isSpeechRecording, setIsSpeechRecording ] = useState(false);
     const [ transcriptText, setTranscriptText ] = useState('');
     const [ isRecordingActive, setIsRecordingActive ] = useState(false);
     const [ mediaRecorder, setMediaRecorder ] = useState(null);
-    const [ replacingMessageID, setReplacingMessageID ] = useState(null);
 
     const [ isPlayingSign, setIsPlayingSign ] = useState(false);
     const [ playInterval, setPlayInterval ] = useState(null);
@@ -194,8 +193,8 @@ const ConversationScreen = () => {
     // 判斷訊息是否可編輯
     const isMessageEditable = (message, index) => {
         // 正在編輯 -> 只有當前編輯的訊息可操作
-        if (editingMessageID !== null) {
-            return message.id === editingMessageID;
+        if (editingMessageId !== null) {
+            return message.id === editingMessageId;
         }
         
         // 正在錄音 -> 所有訊息都不可操作
@@ -211,70 +210,8 @@ const ConversationScreen = () => {
         }
     };
 
-    // 準備錄音狀態設置
-    const prepareForRecording = () => {
-        console.log('準備錄音, replacingMessageID:', replacingMessageID);
-        setTranscriptText('');
-        setIsSpeechRecording(true);
-    };
-
-    // 開始或停止錄音
-    const toggleRecording = () => {
-        if (!isRecordingActive) {
-            // 開始錄音
-            startRecording();
-        } else {
-            // 停止錄音並添加結果到對話中
-            stopRecordingAndAddToChat();
-        }
-    };
-
-    // 開始錄音
-    const startRecording = async () => {
-        setIsRecordingActive(true);
-        console.log('開始語音錄音, replacingMessageID:', replacingMessageID);
-
-        try {
-            // request 麥克風
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-            const recorder = new MediaRecorder(stream);
-            const audioChunks = [];
-
-            // 收集音訊數據
-            recorder.ondataavailable = e => {
-                if (e.data.size > 0) {
-                    audioChunks.push(e.data);
-                    console.log('收集音頻數據:', e.data.size, 'bytes');
-                }
-            };
-
-            // 設置錄音完成處理
-            recorder.onstop = async () => {
-                console.log('錄音停止，收集了', audioChunks.length, '個音頻塊');
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                console.log('創建音頻 Blob:', audioBlob.size, 'bytes');
-                // 加載中
-                setTranscriptText('處理中...');
-                // 送到後端
-                await processAudioWithWhisper(audioBlob);
-                // 停止所有音訊軌道
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            // 開始錄音
-            recorder.start(1000);
-
-            // 保存 recorder 參考，以便稍後停止
-            setMediaRecorder(recorder);
-        } catch (error) {
-            console.error('開始錄音時發生錯誤：', error);
-            setIsRecordingActive(false);
-            alert('無法啟動麥克風，請確認是否授予麥克風權限。');
-        }
-    }; 
-
-    const processAudioWithWhisper = async (audioBlob) => {
+    // 錄音處理
+    const processAudioWithWhisper = async (audioBlob, replaceMessageId = null) => {
         try {
             console.log('正在發送 API 請求到:', 'http://localhost:8080/api/speech-recognition');
             console.log('音頻大小:', audioBlob.size, 'bytes');
@@ -297,50 +234,89 @@ const ConversationScreen = () => {
             
             if (result.success) {
                 setTranscriptText(result.text);
-                
-                // 使用當前的 replacingMessageID 值
-                const currentReplacingID = replacingMessageID;
-                
-                if (currentReplacingID) {
-                    // 確實是要替換現有訊息
-                    console.log('替換訊息 ID:', currentReplacingID);
-                    editMessage(currentReplacingID, result.text);
-                    // 播放替換後的手語動畫
-                    playSignAnimation(result.text);
+
+                if (replaceMessageId) {
+                    console.log('替換 id: ', replaceMessageId);
+                    editMessage(replaceMessageId, result.text);
                 } else {
-                    // 只有在沒有要替換的情況下才新增
-                    console.log('新增訊息');
-                    const newMessage = {
-                        id: Date.now().toString(),
-                        text: result.text,
-                        sender: 'staff',
-                        timestamp: new Date().toISOString()
-                    };
-                    setConversations(prev => [...prev, newMessage]);
+                    addMessage(result.text, 'staff');
                 }
-                
-                // 重置狀態
-                setReplacingMessageID(null);
+
                 setIsSpeechRecording(false);
+                setIsRecordingActive(false);
 
             } else {
                 console.error('語音辨識失敗:', result.error);
                 setTranscriptText('語音辨識失敗，請重試。');
+                setIsSpeechRecording(false);
+                setIsRecordingActive(false);
             }
         } catch (error) {
             console.error('處理音頻時發生錯誤:', error);
             setTranscriptText('處理音頻時發生錯誤，請重試。');
+            setIsSpeechRecording(false);
+            setIsRecordingActive(false);
+        }
+    };
+
+    // 開始錄音
+    const startRecording = async (replaceMessageId = null) => {
+        console.log('開始錄音： ', replaceMessageId ? '替換' : '新增');
+        
+        setTranscriptText('');
+        setIsSpeechRecording(true);
+        setIsRecordingActive(true);
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            recorder.ondataavailable = e => {
+                if (e.data.size > 0) {
+                    audioChunks.push(e.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                setTranscriptText('處理中...');
+                await processAudioWithWhisper(audioBlob, replaceMessageId);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start(1000);
+            setMediaRecorder(recorder);
+        } catch (error) {
+            console.error('開始錄音時發生錯誤：', error);
+            setIsRecordingActive(false);
+            setIsSpeechRecording(false);
+            alert('無法啟動麥克風，請確認是否授予麥克風權限。');
+        }
+    };
+
+    // 語音辨識按鈕：新增模式
+    const handleSpeechRecognition = () => {
+        console.log('語音辨識按鈕：新增');
+        startRecording(); 
+    };
+
+    // 重新錄製按鈕
+    const handleRecordMessage = (messageId, sender) => {
+        console.log('重新錄製, messageID:', messageId, 'sender:', sender);
+        
+        if(sender === 'staff') {
+            startRecording(messageId); 
+        } else {
+            navigate('/sign-language-recognition', {state: {messageId}});
         }
     };
 
     // 停止錄音並添加結果到對話中
-    const stopRecordingAndAddToChat = () => {
-        console.log('停止錄音, replacingMessageID:', replacingMessageID);
-        // 停止 MediaRecorder
+    const stopRecording = () => {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
         }
-        //  實際訊息添加在 processAudioWithWhisper 成功處理後進行，因此只需設定狀態
         setIsRecordingActive(false);
     };
 
@@ -350,49 +326,31 @@ const ConversationScreen = () => {
     };
 
     // 編輯訊息
-    const handleEditMessage = (messageID) => {
-        const message = conversations.find(msg => msg.id === messageID);
-        setEditingMessageID(messageID);
+    const handleEditMessage = (messageId) => {
+        const message = conversations.find(msg => msg.id === messageId);
+        setEditingMessageId(messageId);
         setEditingText(message.text);
     };
 
     // 儲存編輯
     const handleSaveEdit = () => {
-        if (editingMessageID && editingText.trim()) {
+        if (editingMessageId && editingText.trim()) {
             // 編輯訊息
-            editMessage(editingMessageID, editingText.trim());
+            editMessage(editingMessageId, editingText.trim());
             // 如果是staff的訊息，播放手語動畫
-            const message = conversations.find(msg => msg.id === editingMessageID);
+            const message = conversations.find(msg => msg.id === editingMessageId);
             if (message && message.sender === 'staff') {
                 playSignAnimation(editingText.trim());
             }
-            setEditingMessageID(null);
+            setEditingMessageId(null);
             setEditingText('');
         }
     };
 
     // 取消編輯  
     const handleCancelEdit = () => {
-        setEditingMessageID(null);
+        setEditingMessageId(null);
         setEditingText('');
-        setReplacingMessageID(null); // 清空替換ID
-    };
-
-    // 重新手語辨識 - 修正版本
-    const handleRecordMessage = (messageID, sender) => {
-        console.log('重新錄製訊息, messageID:', messageID, 'sender:', sender);
-        
-        if(sender === 'staff') {
-            // 先設置要替換的訊息ID，再進入錄音模式
-            setReplacingMessageID(messageID);
-            // 使用 setTimeout 確保 state 更新完成
-            setTimeout(() => {
-                prepareForRecording();
-            }, 0);
-        } else {
-            // 手語辨識：轉跳手語頁面
-            navigate('/sign-language-recognition', {state: {messageID}});
-        }
     };
 
     // 完成業務
@@ -406,8 +364,6 @@ const ConversationScreen = () => {
             if (window.speechSimInterval) {
                 clearInterval(window.speechSimInterval);
             }
-            // 清理時也要重置 replacingMessageID
-            setReplacingMessageID(null);
         };
     }, []);
 
@@ -445,13 +401,13 @@ const ConversationScreen = () => {
             <div className='conversation-container'>
                 <div className='message-list'>
                     {conversations.map((message, index) => {
-                        const isEditing = editingMessageID === message.id;
+                        const isEditing = editingMessageId === message.id;
                         const canEdit = isMessageEditable(message, index);
 
                         return (
                         <div
                             key = { message.id }
-                            className = {`message ${message.sender === 'staff' ? 'staff-message' : 'customer-message'} ${editingMessageID ? (isEditing ? 'editing-message' : 'dimmed-message') : ''}`}
+                            className = {`message ${message.sender === 'staff' ? 'staff-message' : 'customer-message'} ${editingMessageId ? (isEditing ? 'editing-message' : 'dimmed-message') : ''}`}
                         >
                             {isEditing ? (
                                 <div className ='message-editing'>
@@ -524,7 +480,7 @@ const ConversationScreen = () => {
                 {isSpeechRecording ? (
                     <button 
                         className={`custom-record-button ${isRecordingActive ? 'recording-active' : ''}`}
-                        onClick={toggleRecording}
+                        onClick={stopRecording}
                     >
                         <div className='button-inner'></div>
                     </button>
@@ -536,7 +492,7 @@ const ConversationScreen = () => {
 
                 <button 
                     className={`speech-button ${isSpeechRecording ? 'disabled-button' : ''}`} 
-                    onClick={!isSpeechRecording ? prepareForRecording : undefined}
+                    onClick={!isSpeechRecording ? handleSpeechRecognition : undefined}
                     disabled={isSpeechRecording}
                 >
                     語音辨識
