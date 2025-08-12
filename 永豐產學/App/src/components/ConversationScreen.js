@@ -31,7 +31,7 @@ const ConversationScreen = () => {
     // Unity初始化
     useEffect(() => {
         loadCSVMapping();
-        
+
         const loadUnity = async () => {
             try {
                 if (!unityCanvasRef.current) {
@@ -198,7 +198,7 @@ const ConversationScreen = () => {
     const fetchSignWordsAndPlay = async () => {
         try {
             console.log('正在獲取手語語序...');
-            const response = await fetch('http://localhost:5050/getSignWords'); 
+            const response = await fetch('http://localhost:5050/getRes'); 
             const data = await response.json();
             
             if (data.msg && data.msg.trim()) {
