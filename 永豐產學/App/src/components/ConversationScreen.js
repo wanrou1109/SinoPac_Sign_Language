@@ -22,11 +22,16 @@ const ConversationScreen = () => {
     // Unity
     const unityCanvasRef = useRef(null);
     const unityInstanceRef = useRef(null);
-    const [isUnityLoaded, setIsUnityLoaded] = useState(false);
-    const [unityError, setUnityError] = useState(null);
+    const [ isUnityLoaded, setIsUnityLoaded ] = useState(false);
+    const [ unityError, setUnityError ] = useState(null);
+
+    const [ signMapping, setSignMapping ] = useState(new Map());
+    const [ isMappingLoaded, setIsMappingLoaded ] = useState(false);
 
     // Unity初始化
     useEffect(() => {
+        loadCSVMapping();
+
         const loadUnity = async () => {
             try {
                 if (!unityCanvasRef.current) {
@@ -97,18 +102,114 @@ const ConversationScreen = () => {
         };
     }, []);
 
+    // js 解析 csv
+    const parseCSV = (csvText) => {
+        const lines = csvText.split('\n');
+        const result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const columns = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let j = 0; j < line.length; j++) {
+                const char = line[j];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    columns.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            columns.push(current.trim());
+            const cleanedColumns = columns.map(col => col.replace(/^["']|["']$/g, ''));
+            result.push(cleanedColumns);
+        }
+        
+        return result;
+    };
+
+    // 載入 csv
+    const loadCSVMapping = async () => {
+        try {
+            console.log('載入手語對照表');
+            
+            const response = await fetch('/sign_language_mapping.csv');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const csvText = await response.text();
+            const parsedData = parseCSV(csvText);
+            
+            const mapping = new Map();
+            
+            for (let i = 1; i < parsedData.length; i++) {
+                const row = parsedData[i];
+                if (row.length >= 2) {
+                    const chineseText = row[0]?.trim();
+                    const signWord = row[1]?.trim();
+                    
+                    if (chineseText && signWord) {
+                        mapping.set(chineseText, signWord);
+                    }
+                }
+            }
+            
+            setSignMapping(mapping);
+            setIsMappingLoaded(true);
+            console.log('手語對照表載入完成');
+            
+        } catch (error) {
+            console.error('載入 CSV 對照表失敗:', error);
+            console.log('手語對照表載入失敗');
+        }
+    };
+
+    // 轉簡寫
+    const convertToShortSign = (text) => {
+        if (!isMappingLoaded) return text;
+        
+        const words = text.split(' ').filter(word => word.trim());
+        const result = [];
+        
+        for (const word of words) {
+            if (signMapping.has(word)) {
+                const shortWord = signMapping.get(word);
+                result.push(shortWord);
+                console.log(`🔤 "${word}" → "${shortWord}"`);
+            } else {
+                result.push(word);
+                console.log(`"${word}" → "${word}" (無對照)`);
+            }
+        }
+        
+        return result.join(' ');
+    };
+
     // 獲取手語語序
     const fetchSignWordsAndPlay = async () => {
         try {
             console.log('正在獲取手語語序...');
-            const response = await fetch('http://localhost:5050/getSignWords'); 
+            const response = await fetch('http://localhost:5050/getRes'); 
             const data = await response.json();
             
             if (data.msg && data.msg.trim()) {
                 console.log('獲取到手語語序:', data.msg);
-                playSignAnimation(data.msg); 
+
+                const shortSignSequence = convertToShortSign(data.msg);
+                console.log('轉換後的簡寫序列:', shortSignSequence);
+
+                playSignAnimation(shortSignSequence); 
             } else {
-                console.log('沒有獲取到手語語序');
+                console.log('未返回有效手語語序');
             }
         } catch (error) {
             console.error('獲取手語語序失敗:', error);
