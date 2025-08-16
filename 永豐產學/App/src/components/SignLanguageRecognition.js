@@ -39,7 +39,11 @@ const SignLanguageRecognition = () => {
   useEffect(() => {
     const iv = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5050/getSignWords', { mode: 'cors' });
+        const res = await fetch('http://localhost:5050/handlanRes', { 
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'include'
+        });
         const data = await res.json();
         if (data.msg && data.msg.trim() !== '') {
           setRawSentence(data.msg);
