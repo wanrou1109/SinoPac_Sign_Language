@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const mongoose = require('mongoose');
+const { data } = require('react-router-dom');
 
 const app = express();
 const PORT = 8080;
@@ -138,7 +139,7 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
       });
 
       let signLanguageText = '';
-
+      
       llmProcess.stdout.on('data', (chunk) => {
         signLanguageText += chunk.toString();
         console.log('【LLM 轉手語輸出】', signLanguageText);
