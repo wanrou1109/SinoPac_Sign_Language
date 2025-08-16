@@ -184,7 +184,7 @@ const ConversationScreen = () => {
             if (signMapping.has(word)) {
                 const shortWord = signMapping.get(word);
                 result.push(shortWord);
-                console.log(`🔤 "${word}" → "${shortWord}"`);
+                console.log(`"${word}" → "${shortWord}"`);
             } else {
                 result.push(word);
                 console.log(`"${word}" → "${word}" (無對照)`);
@@ -198,7 +198,10 @@ const ConversationScreen = () => {
     const fetchSignWordsAndPlay = async () => {
         try {
             console.log('正在獲取手語語序...');
-            const response = await fetch('http://localhost:5050/getRes'); 
+            const response = await fetch('http://localhost:5050/handlanRes', {
+                method: 'GET',
+                credentials: 'include'
+            }); 
             const data = await response.json();
             
             if (data.msg && data.msg.trim()) {
