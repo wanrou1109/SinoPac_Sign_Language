@@ -78,22 +78,20 @@ def favicon():
 
 @app.route('/handlanRes', methods=['POST', 'GET'])
 def handle_result():
-    global trans_res 
+    global trans_res
     
     if request.method == 'POST':
         data = request.form
         result = data.get('result')
         trans_res = result
         print('Received result:', result)
-        return jsonify({"status": "ok"})
+        return jsonify({"status": "ok"}) 
     
     elif request.method == 'GET':
         msg = trans_res if trans_res else ""
         trans_res = None 
         print(f"返回手語語序: {msg}")
-        response = jsonify({"msg": msg})
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
+        return jsonify({"msg": msg})
 
 # LLM 轉換結果
 @app.route('/naturalRes', methods=['POST'])
@@ -105,7 +103,7 @@ def handle_natural_res():
         natural_language_result = result  # 存儲LLM轉換後的中文結果
         print('LLM轉換後的中文結果:', result)
         response = jsonify({"status": "ok"})
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Credentials')
         return response
     
 @app.route('/translateSign', methods=['POST'])
