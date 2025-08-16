@@ -76,15 +76,26 @@ def process_pdf(input_path, output_path, type, level):
 def favicon():
     return '', 204
 
-@app.route('/handlanRes', methods=['POST'])
+@app.route('/handlanRes', methods=['POST', 'GET'])
 def handle_result():
     if request.method == 'POST':
+        # 接收手语识别结果（保持原有逻辑）
         data = request.form
         result = data.get('result')
         global trans_res
         trans_res = result
         print('Received result:', result)
-        return jsonify({"status": "ok"})  # ✅ 避免 500 error
+        return jsonify({"status": "ok"})
+    
+    elif request.method == 'GET':
+        # 获取手语语序
+        global trans_res
+        msg = trans_res if trans_res else ""
+        trans_res = None  # 读取后清空
+        print(f"返回手語語序: {msg}")
+        response = jsonify({"msg": msg})
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 # LLM 轉換結果
 @app.route('/naturalRes', methods=['POST'])
@@ -156,41 +167,6 @@ def video_feed():
         error_response = make_response("Video stream error", 500)
         error_response.headers.add('Access-Control-Allow-Credentials', 'true')
         return error_response
- 
-# 優先返回 LLM 轉換結果   
-@app.route('/getRes', methods=['GET'])
-def getRes():
-    global trans_res, natural_language_result
-    
-    if natural_language_result:
-        msg = natural_language_result
-        natural_language_result = None  # 讀取後清空
-        print(f"返回LLM轉換的中文結果: {msg}")
-    elif trans_res:
-        msg = trans_res
-        trans_res = None  # 讀取後清空
-        print(f"返回原始手語結果: {msg}")
-    else:
-        msg = ""
-    
-    response = jsonify({"msg": msg})
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-
-# 獲取手語語序
-@app.route('/getSignWords', methods=['GET'])
-def getSignWords():
-    global trans_res
-    if trans_res:
-        msg = trans_res
-        trans_res = None  # 讀取後清空
-        print(f"返回手語語序: {msg}")
-        response = jsonify({"msg": msg})
-    else:
-        response = jsonify({"msg": ""})
-    
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
 
 if __name__ == '__main__':
     app.config['UPLOAD_FOLDER'] = 'uploads'
