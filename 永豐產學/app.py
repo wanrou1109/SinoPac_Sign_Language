@@ -78,20 +78,18 @@ def favicon():
 
 @app.route('/handlanRes', methods=['POST', 'GET'])
 def handle_result():
+    global trans_res 
+    
     if request.method == 'POST':
-        # 接收手语识别结果（保持原有逻辑）
         data = request.form
         result = data.get('result')
-        global trans_res
         trans_res = result
         print('Received result:', result)
         return jsonify({"status": "ok"})
     
     elif request.method == 'GET':
-        # 获取手语语序
-        global trans_res
         msg = trans_res if trans_res else ""
-        trans_res = None  # 读取后清空
+        trans_res = None 
         print(f"返回手語語序: {msg}")
         response = jsonify({"msg": msg})
         response.headers.add('Access-Control-Allow-Credentials', 'true')
