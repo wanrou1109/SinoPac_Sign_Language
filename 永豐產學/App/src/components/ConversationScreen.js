@@ -346,6 +346,22 @@ const ConversationScreen = () => {
                     addMessage(result.text, 'staff');
                 }
 
+                if (result.signLanguage && result.signLanguage.trim()) {
+                    console.log('发送手语语序到 handlanRes:', result.signLanguage);
+                    try {
+                        await fetch('http://localhost:5050/handlanRes', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: new URLSearchParams({ result: result.signLanguage })
+                        });
+                        console.log('手语语序发送成功');
+                    } catch (error) {
+                        console.error('发送手语语序失败:', error);
+                    }
+                }
+
                 setIsSpeechRecording(false);
                 setIsRecordingActive(false);
 
