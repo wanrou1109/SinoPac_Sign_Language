@@ -115,7 +115,7 @@ const SignLanguageRecognition = () => {
   
 
   return (
-    <div className='sign-language-recognition-screen'>
+    <div className='sign-recognition-screen'>
       <Header showBackButton={true} onBack={handleBack} />
 
       <div className='video-stream-box'>
