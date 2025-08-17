@@ -2,7 +2,7 @@
     height: 93vh;
     display: flex;
     flex-direction: column;
-    background-color: #fcf3ea;
+    background-color: #fffaf5;
 }
 
 /* Unity手語動畫容器 */
@@ -14,10 +14,10 @@
   max-width: 700px;
   margin: 0 auto;
   padding: 15px;
-  background: #fcf3ea;
+  background: #fffaf5;
   border-radius: 0 0 12px 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 2px solid #fcf3ea;
+  border-bottom: 2px solid #fffaf5;
 }
 
 .unity-header {
@@ -289,7 +289,7 @@
 
 .image-button {
     border: none;
-    background-color: #fcf3ea;
+    background-color: #fffaf5;
 }
 
 .edit-buttons {
@@ -385,7 +385,7 @@
     width: calc(100% - 6px);
     height: calc(100% - 6px);
     border-radius: 50%;
-    background-color: #fcf3ea;
+    background-color: #fffaf5;
     z-index: 2;
 }
 
