@@ -5,7 +5,7 @@
   justify-content: center;
   position: relative;
   height: 96vh;
-  background-color: #254A91;
+  background-color: #9b8269;
 }
 
 .title {
@@ -14,7 +14,7 @@
   flex-direction: column;
   gap: 20px;
   font-size: 25px;
-  color:white;
+  color: #fff1e6;
   padding-bottom: 20px;
 }
 
@@ -25,7 +25,7 @@
   padding: 15px 20px;
   width: 80%;
   max-width: 300px;
-  background-color: white;
-  color: #254A91;
+  background-color: #fff1e6;
+  color: #9b8269;
   cursor: pointer;
 }

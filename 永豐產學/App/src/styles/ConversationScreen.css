@@ -2,6 +2,7 @@
     height: 93vh;
     display: flex;
     flex-direction: column;
+    background-color: #fffaf5;
 }
 
 /* Unity手語動畫容器 */
@@ -13,10 +14,10 @@
   max-width: 700px;
   margin: 0 auto;
   padding: 15px;
-  background: #f8f9fa;
+  background: #fffaf5;
   border-radius: 0 0 12px 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid #fffaf5;
 }
 
 .unity-header {
@@ -28,19 +29,19 @@
 
 .unity-header h3 {
   margin: 0;
-  color: #333;
+  color: #5f5449;
   font-size: 18px;
   font-weight: 600;
 }
 
 .unity-loading {
-  color: #007bff;
+  color: #5f5449;
   font-size: 14px;
   animation: pulse 1.5s ease-in-out infinite alternate;
 }
 
 .unity-error {
-  color: #dc3545;
+  color: #de541e;
   font-size: 14px;
   background: #f8d7da;
   padding: 8px 12px;
@@ -59,8 +60,8 @@
   height: 300px;
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
-  border: 2px solid #e9ecef;
+  background: #fff1e6;
+  border: 2px solid #fff1e6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,7 +81,7 @@
   position: absolute;
   top: 5px;
   right: 5px;
-  background: #007bff;
+  background: #5f5449;
   border: none;
   border-radius: 50%;
   width: 32px;
@@ -98,15 +99,6 @@
 .message:hover .play-sign-button {
   opacity: 1;
   transform: scale(1);
-}
-
-.play-sign-button:hover {
-  background: #0056b3;
-  transform: scale(1.1);
-}
-
-.play-sign-button:active {
-  transform: scale(0.95);
 }
 
 .staff-message .message-content {
@@ -163,14 +155,14 @@
     text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);
   }
   40% { 
-    color: #007bff; 
+    color: #5f5449; 
     text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);
   }
   60% { 
-    text-shadow: .25em 0 0 #007bff, .5em 0 0 rgba(0,0,0,0);
+    text-shadow: .25em 0 0 #5f5449, .5em 0 0 rgba(0,0,0,0);
   }
   80%, 100% { 
-    text-shadow: .25em 0 0 #007bff, .5em 0 0 #007bff;
+    text-shadow: .25em 0 0 #5f5449, .5em 0 0 #5f5449;
   }
 }
 
@@ -212,20 +204,21 @@
 }
 
 .message-content {
-    color: white;
+    color: #fff1e6;
     padding: 2px 10px;
     border-radius: 12px;
     position: relative;
 }
 
 .staff-message .message-content {
-    background-color: #f0f0f0;
-    color: black;
+    background-color: white;
+    color: #5f5449;
     border-top-right-radius: 0;
 }
 
 .customer-message .message-content {
-    background-color: #254A91;
+    background-color: #5f5449;
+    color: #fff1e6;
     border-top-left-radius: 0;
 }
 
@@ -247,8 +240,8 @@
 /* 正在編輯的訊息 */
 .customer-message .message-editing textarea {
     width: 100%;
-    background-color: #254A91;
-    color: white;
+    background-color: #5f5449;
+    color: #fff1e6;
     border: none;
     border-radius: 12px;
     border-top-left-radius: 0;
@@ -260,8 +253,8 @@
 
 .staff-message .message-editing textarea {
     width: 100%;
-    background-color: #f0f0f0;
-    color: black; 
+    background-color: white;
+    color: #5f5449; 
     border: none;
     border-radius: 12px;
     border-top-right-radius: 0; 
@@ -296,7 +289,7 @@
 
 .image-button {
     border: none;
-    background-color: white;
+    background-color: #fffaf5;
 }
 
 .edit-buttons {
@@ -310,8 +303,8 @@
     padding: 8px 15px;
     border: none;
     border-radius: 6px;
-    background-color: #254A91;
-    color: white;
+    background-color: #5f5449;
+    color: #fff1e6;
     cursor: pointer;
 }
 
@@ -329,8 +322,8 @@
 }
 
 .sign-button {
-    background-color: #254A91;
-    color: white;
+    background-color: #5f5449;
+    color: #fff1e6;
     border-radius: 10px;
     border: none;
     font-size: 25px;
@@ -338,8 +331,8 @@
 }
 
 .finish-button {
-    background-color: #E42311;
-    color: white;
+    background-color: #ddd4cc;
+    color: #5f5449;
     border-radius: 10px;
     border: none;
     font-size: 25px;
@@ -347,8 +340,8 @@
 }
 
 .speech-button {
-    background-color: #DDDDDD;
-    color: black;
+    background-color: #ca9375;
+    color: #fff1e6;
     border-radius: 10px;
     border: none;
     font-size: 25px;
@@ -379,7 +372,7 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background-color: #535353;
+    background-color: #5f5449;
     z-index: 1;
 }
 
@@ -392,7 +385,7 @@
     width: calc(100% - 6px);
     height: calc(100% - 6px);
     border-radius: 50%;
-    background-color: white;
+    background-color: #fffaf5;
     z-index: 2;
 }
 
@@ -401,7 +394,7 @@
     width: calc(100% - 16px);
     height: calc(100% - 16px);
     border-radius: 50%;
-    background-color: #E42311;
+    background-color: #de541e;
     z-index: 3;
 }
 
@@ -409,7 +402,7 @@
     border-radius: 8px;  
     width: calc(100% - 32px);
     height: calc(100% - 32px);
-    background-color: #E42311;
+    background-color: #de541e;
 }
 
 .disabled-button {
