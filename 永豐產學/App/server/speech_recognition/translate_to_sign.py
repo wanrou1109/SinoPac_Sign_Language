@@ -62,8 +62,7 @@ def ensure_traditional_chinese(text: str) -> Tuple[str, List[Dict[str,str]]]:
     words = text.split()
     result: List[str] = []
     for word in words:
-        # 使用原始字符串 (r'...') 來正確處理正則表達式轉義序列
-        if not re.match(r'^[\u4e00-\u9fff\s，。、]+$', word):
+        if not re.match('^[\u4e00-\u9fff\s，。、]+$', word):
             lang = detect(word)
             if lang not in ('zh-tw','zh-cn'):
                 trans = translator.translate(word)
@@ -72,6 +71,7 @@ def ensure_traditional_chinese(text: str) -> Tuple[str, List[Dict[str,str]]]:
         word = convert(word, 'zh-hant')
         result.append(word)
     return ' '.join(result), records
+
 # === 轉手語主流程 ===
 def translate_sentence(user_message: str) -> str:
     related = retrieve_relevant_sentences(user_message)
