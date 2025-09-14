@@ -139,7 +139,7 @@ app.post('/api/speech-recognition', upload.single('audio'), (req, res) => {
       });
 
       let signLanguageText = '';
-      
+
       llmProcess.stdout.on('data', (chunk) => {
         signLanguageText += chunk.toString();
         console.log('【LLM 轉手語輸出】', signLanguageText);
