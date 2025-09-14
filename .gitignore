@@ -23,7 +23,6 @@ yarn-error.log*
 **/.eslintcache
 *.cache/
 
-
 # ===== 圖像與影片等大檔案（避免誤加）=====
 *.gif
 *.bmp
@@ -41,3 +40,6 @@ coverage/
 *.bak
 *.tmp
 *.orig
+
+# ===== Unity WebGL build (allow inside public/SignPlayer) =====
+!public/SignPlayer/**

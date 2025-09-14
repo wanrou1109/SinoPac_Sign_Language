@@ -2,11 +2,11 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 93vh;
+    height: 100vh;
     max-width: 834px;
     max-height: 1194px;
     margin: 0 auto;
-    background-color: white;
+    background-color: #fffaf5;
 }
 
 .feedback-container {
@@ -46,11 +46,11 @@
     font-size: 40px;
     margin-right: 15px;
     cursor: pointer;
-    color: #ddd;
+    color: #ddd4cc;
 }
 
 .star.active {
-    color: #ffcd00; 
+    color: #826e5a; 
 }
 
 .comment-section {
@@ -77,7 +77,7 @@
     padding: 20px;
     border-radius: 15px;
     border: none;
-    background-color: #F0F0F0;
+    background-color: white;
     font-size: 18px;
     resize: none;
 }
@@ -87,8 +87,8 @@
     height: 60px;
     border-radius: 10px;
     border: none;
-    background-color: #ddd;
-    color: #333;
+    background-color: #ddd4cc;
+    color: white;
     font-size: 20px;
     font-weight: bold;
     margin: 20px auto;
@@ -101,7 +101,7 @@
 }
 
 .submit-button.active {
-    background-color: #254A91; 
+    background-color: #9b8269; 
     color: white;
 }
 

@@ -1,5 +1,5 @@
 .header {
-    background-color: #254A91;
+    background-color: #997b66;
     padding: 20px 0;
 }
 
@@ -22,12 +22,12 @@
 .back-button {
     background: none;
     border: none;
-    color: white;
+    color: #fffaf5;
     padding: 0;
 }
 
 .header-title {
-    color: white;
+    color: #fffaf5;
     flex: 1;
     text-align: center;
     font-weight: normal;
