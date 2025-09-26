@@ -228,7 +228,7 @@ const ConversationScreen = () => {
                     signWords.forEach((word, index) => {
                         setTimeout(() => {
                             if (unityInstanceRef.current && isPlayingSign) {
-                                unityInstanceRef.current.SendMessage("Mannequin_Female", "PlaySign", word);
+                                unityInstanceRef.current.SendMessage("Armature", "PlaySign", word);
                             }
                         }, index * 1500);
                     });
