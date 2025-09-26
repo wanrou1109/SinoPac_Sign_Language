@@ -28,7 +28,7 @@ class AudioTranscriber:
         """從指定的 txt 檔讀取手語對照字典並回傳一個 dictionary"""
         dictionary = {}
         if not os.path.exists(file_path):
-            print(f"字典檔案 {file_path} 不存在！請先建立此檔案。")
+            sys.stderr.write(f"字典檔案 {file_path} 不存在！請先建立此檔案。\n")
             return dictionary
         try:
             # 嘗試開啟並讀取檔案
