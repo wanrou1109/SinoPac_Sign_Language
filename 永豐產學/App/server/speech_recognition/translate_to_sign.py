@@ -13,6 +13,9 @@ from langdetect import detect
 from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
 
+# 放在檔案較前面（import 後）
+HAN_SPACE_PUNCT_RE = re.compile('^[\u4e00-\u9fff\\s，。、]+$')
+
 
 # === 🔑 設定 OpenRouter (OpenAI) API Key 與參數 ===
 # === 🔑 載入環境變數 ===
@@ -40,7 +43,13 @@ def load_corpus_from_docx(file_path: str, max_len: int = 80) -> List[str]:
             chunks.append("".join(cur))
     return chunks
 
-corpus = load_corpus_from_docx("rag_nlToSign.docx", max_len=80)
+# 找到目前檔案所在目錄
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# rag_nlToSign.docx 與 translate_to_sign.py 在同一層的上層資料夾
+DOCX_PATH = os.path.join(BASE_DIR, '..', 'rag_nlToSign.docx')
+
+corpus = load_corpus_from_docx(DOCX_PATH, max_len=80)
 
 # === 建立向量索引 ===
 embedder = SentenceTransformer("shibing624/text2vec-base-chinese")
@@ -62,7 +71,8 @@ def ensure_traditional_chinese(text: str) -> Tuple[str, List[Dict[str,str]]]:
     words = text.split()
     result: List[str] = []
     for word in words:
-        if not re.match('^[\u4e00-\u9fff\s，。、]+$', word):
+        # 用預編譯的正則
+        if not HAN_SPACE_PUNCT_RE.match(word):
             lang = detect(word)
             if lang not in ('zh-tw','zh-cn'):
                 trans = translator.translate(word)

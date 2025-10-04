@@ -198,11 +198,12 @@ const ConversationScreen = () => {
     const fetchSignWordsAndPlay = async () => {
         try {
             console.log('正在獲取手語語序...');
-            const response = await fetch('http://localhost:5050/handlanRes', {
+            const response = await fetch('http://localhost:5050/signseq/staff', {
                 method: 'GET',
                 credentials: 'include'
             }); 
             const data = await response.json();
+            console.log(data);
             
             if (data.msg && data.msg.trim()) {
                 console.log('獲取到手語語序:', data.msg);
@@ -219,35 +220,25 @@ const ConversationScreen = () => {
         }
     };
 
-    // 播放手語動畫的函數
+    // 播放手語動畫的函數（只播放一次）
     const playSignAnimation = (signSequence) => {
+        console.log("播放動畫");
         if (isUnityLoaded && unityInstanceRef.current && signSequence.trim()) {
             try {
-                const playOneSequence = () => {
-                    const signWords = signSequence.split(' ').filter(word => word.trim());
-                    signWords.forEach((word, index) => {
-                        setTimeout(() => {
-                            if (unityInstanceRef.current && isPlayingSign) {
-                                unityInstanceRef.current.SendMessage("Mannequin_Female", "PlaySign", word);
-                            }
-                        }, index * 1500);
-                    });
-                };
-                
-                playOneSequence(); 
-                
                 const signWords = signSequence.split(' ').filter(word => word.trim());
-                const totalTime = signWords.length * 1500;
-                
-                const interval = setInterval(() => {
-                    if (isPlayingSign) {
-                        playOneSequence(); 
-                    } else {
-                        clearInterval(interval);
-                    }
-                }, totalTime);
-                
-                setPlayInterval(interval);
+                signWords.forEach((word, index) => {
+                    setTimeout(() => {
+                        console.log("播放動畫中1");
+                        console.log(unityInstanceRef.current);
+                        if (unityInstanceRef.current) {   // ✅ 不要用 isPlayingSign 阻擋
+                            console.log("播放動畫中2");
+                            unityInstanceRef.current.SendMessage("Armature", "PlaySign", word);
+                            console.log("播放動畫中:", word);
+                        }
+                    }, index * 1500);
+                });
+
+                console.log("播放動畫結束（只播放一次）");
             } catch (error) {
                 console.error('播放手語動畫失敗:', error);
             }
@@ -335,6 +326,8 @@ const ConversationScreen = () => {
             }
             
             const result = await response.json();
+            console.log("Debug 1 : Result of Speech Recognition");
+            console.log(result);
             
             if (result.success) {
                 setTranscriptText(result.text);
@@ -347,13 +340,14 @@ const ConversationScreen = () => {
                 }
 
                 if (result.signLanguage && result.signLanguage.trim()) {
-                    console.log('发送手语语序到 handlanRes:', result.signLanguage);
+                    console.log('發送手語語序到 signseq/staff:', result.signLanguage);
                     try {
-                        await fetch('http://localhost:5050/handlanRes', {
+                        await fetch('http://localhost:5050/signseq/staff', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded',
                             },
+                            credentials: 'include',
                             body: new URLSearchParams({ result: result.signLanguage })
                         });
                         console.log('手语语序发送成功');

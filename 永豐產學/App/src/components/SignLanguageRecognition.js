@@ -57,27 +57,26 @@ const SignLanguageRecognition = () => {
   
   // 處理最後拿到的中文句，推到 Conversation
   const handleResult = (chineseText) => {
+    const newMessage = {
+      id: Date.now().toString(),
+      text: chineseText,
+      sender: 'customer',
+      timestamp: new Date().toISOString(),
+      type: 'sign_language'
+    };
+
     try {
+      console.log("新增客戶訊息到對話:", newMessage);
+
       if (editMessageID) {
-        // 編輯現有訊息
         editMessage(editMessageID, chineseText);
       } else {
-        // 新增訊息到對話
-        const newMessage = {
-          id: Date.now().toString(),
-          text: chineseText,
-          sender: 'customer',
-          timestamp: new Date().toISOString(),
-          type: 'sign_language'
-        };
-        
-        console.log("新增客戶訊息到對話:", newMessage);
         setConversations(prev => [...prev, newMessage]);
       }
-      
-      // 短暫延遲後返回對話頁面
-      navigate('/conversation');
-      
+
+      // ✅ 帶上 newMessage 跳轉
+      navigate('/conversation', { state: { newMessage } });
+
     } catch (error) {
       console.error('處理結果時發生錯誤:', error);
     }
