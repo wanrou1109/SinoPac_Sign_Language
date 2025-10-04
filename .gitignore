@@ -41,3 +41,5 @@ coverage/
 *.bak
 *.tmp
 *.orig
+node_modules/
+.cache/
