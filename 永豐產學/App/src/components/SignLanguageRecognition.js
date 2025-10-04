@@ -136,8 +136,8 @@ const SignLanguageRecognition = () => {
       </div>
 
       <div className='action-bar'>
-        <button className='record-button recording-active' onClick={handleStop}>
-         停止辨識並翻譯
+        <button className='custom-record-button recording-active' onClick={handleStop}>
+          <div className='button-inner'></div>
         </button>
       </div>
     </div>

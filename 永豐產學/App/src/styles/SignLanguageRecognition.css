@@ -23,7 +23,7 @@
     justify-content: center;
 }
   
-.record-button {
+.custom-record-button {
     position: relative;
     width: 80px;
     height: 80px;
@@ -39,7 +39,7 @@
 }
 
 /* 灰色外圈 */
-.record-button::before {
+.custom-record-button::before {
     content: '';
     position: absolute;
     top: 0;
@@ -52,7 +52,7 @@
 }
 
 /* 白色中間圈 */
-.record-button::after {
+.custom-record-button::after {
     content: '';
     position: absolute;
     top: 3px;
@@ -64,8 +64,7 @@
     z-index: 2;
 }
 
-/* 紅色內圈（start, stop recording） */
-.record-button .button-inner {
+.custom-record-button .button-inner {
     position: relative;
     width: calc(100% - 16px);
     height: calc(100% - 16px);
@@ -74,18 +73,18 @@
     z-index: 3;
 }
 
-/* 紅色內方(recording-ing) */
-.recording-active .button-inner {
-    border-radius: 8px;  /* 小圓角方塊 */
+/* 錄音中狀態 - 變成方形 */
+.custom-record-button.recording-active .button-inner {
+    border-radius: 8px;  
     width: calc(100% - 32px);
     height: calc(100% - 32px);
     background-color: #de541e;
 }
 
-/* 按鈕被禁用時的樣式 */
-.record-button:disabled {
+.disabled-button {
     opacity: 0.6;
     cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* 辨識結果容器 */
