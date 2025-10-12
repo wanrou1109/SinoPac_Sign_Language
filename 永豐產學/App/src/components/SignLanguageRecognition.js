@@ -122,7 +122,7 @@ const SignLanguageRecognition = () => {
         <img
           src="http://localhost:5050/video_feed"
           alt="Video Feed"
-          width="640"
+          width="840"
           height="480"
           style={{
             border: '1px solid #ccc',
