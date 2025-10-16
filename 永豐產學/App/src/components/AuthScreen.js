@@ -15,13 +15,14 @@ const AuthScreen = () => {
     return (
         <div className='auth-container'>
             <div className='title'>
-                <h1>手語 / 語音辨識系統</h1>
+                <h1>SignBank: </h1>
+                <h2>AI 手語雙向翻譯系統</h2>
             </div>
 
             <button 
                 className='start-button'
                 onClick={handleStart}>
-                開始使用 Start
+                開始使用
             </button>
         </div>   
     );

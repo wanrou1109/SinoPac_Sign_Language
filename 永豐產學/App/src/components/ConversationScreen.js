@@ -492,7 +492,7 @@ const ConversationScreen = () => {
             {/* Unity */}
             <div className="unity-sign-animation-container">
                 <div className="unity-header">
-                    <h3>Sign Language Animation</h3>
+                    {/*<h3>手語動畫播放區</h3>*/}
                     {unityError && <div className="unity-error">錯誤: {unityError}</div>}
                     {!isUnityLoaded && !unityError && <div className="unity-loading">載入中...</div>}
                 </div>
@@ -505,8 +505,7 @@ const ConversationScreen = () => {
                         style={{
                             width: '100%',
                             height: '100%',
-                            background: '#fff',
-                            border: '1px solid #ddd'
+                            background: '#ffffff',
                         }}
                     />
                 </div>
@@ -588,7 +587,7 @@ const ConversationScreen = () => {
                     onClick={!isSpeechRecording ? handleSignLanguageRecognition : undefined}
                     disabled={isSpeechRecording}
                 >
-                    手語辨識
+                    <img src='images/hand.png' width='35px' alt='SignBank '/>手語辨識
                 </button>
                 
                 {isSpeechRecording ? (
@@ -600,7 +599,7 @@ const ConversationScreen = () => {
                     </button>
                 ) : (
                     <button className='finish-button' onClick={handleFinishService}>
-                        完成業務
+                        <img src='images/logout_white.png' width='30px' alt='SignBank '/>結束
                     </button>
                 )}
 
@@ -609,7 +608,7 @@ const ConversationScreen = () => {
                     onClick={!isSpeechRecording ? handleSpeechRecognition : undefined}
                     disabled={isSpeechRecording}
                 >
-                    語音辨識
+                    <img src='images/microphone.png' width='30px' alt='SignBank '/>語音辨識
                 </button>
             </div>
         </div>

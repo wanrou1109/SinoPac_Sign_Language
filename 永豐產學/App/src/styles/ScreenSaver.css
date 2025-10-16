@@ -1,13 +1,13 @@
 .screen-saver {
-    height: 93vh;
+    height: 100vh;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
-    background-color: #5f5449;
-    color: white;
+    background-color: #e0e0e0;
+    color: black;
     cursor: pointer;
 }
 
@@ -27,7 +27,7 @@
 
 .touch-instruction {
     margin-top: 40px;
-    color: white;
+    color: black;
 }
 
 /* 確保在不同設備上都能正確顯示 */

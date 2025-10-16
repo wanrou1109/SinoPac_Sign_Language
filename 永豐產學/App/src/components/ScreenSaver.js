@@ -14,7 +14,9 @@ const ScreenSaver = () => {
     <div className="screen-saver" onClick={handleScreenClick}>
         <div className="screen-saver-content">
             <div className="bank-logo">
-                <img src="images/SinoPac.jpeg" alt="永豐銀行" />
+                <img src="images/SignBank_logo.png" 
+                width='500px'
+                alt="SignBank" />
             </div>
             <div className="touch-instruction">
                 <p>點擊螢幕開始服務</p>

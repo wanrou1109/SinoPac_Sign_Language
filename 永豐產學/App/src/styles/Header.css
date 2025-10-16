@@ -1,6 +1,12 @@
 .header {
-    background-color: #997b66;
-    padding: 20px 0;
+    background-color: #d3d3d3;
+    padding: 15px 0;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+    border-radius: 15px;
+    box-shadow: 0 8px 5px rgba(0, 0, 0, 0.1);
+
 }
 
 .header-content {
@@ -16,20 +22,53 @@
 }
 
 .header-content-right {
-    padding: 25px;
+    padding-left: 5px;
+    padding-right: 25px;
+    padding-top: 3px;
+    align-items: center;
 }
 
 .back-button {
     background: none;
     border: none;
-    color: #fffaf5;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    color: black;
     padding: 0;
+    margin-left: 20px;
+    box-shadow: 
+        5px 8px 10px rgba(0, 0, 0, 0.1),
+        -5px -8px 10px rgba(142, 142, 142, 0.1);
+}
+
+.exit-button {
+    background: #4c7354b3;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 50px;
+    padding: 0 15px;
+    gap: 10px;
+    margin-right: 5px;
+    box-shadow: 
+        5px 8px 10px rgba(0, 0, 0, 0.1),
+        -5px -8px 10px rgba(142, 142, 142, 0.1);
 }
 
 .header-title {
-    color: #fffaf5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1;
-    text-align: center;
+    gap: 10px;
+    color: black;
     font-weight: normal;
-    font-size: 40px;
+    font-size: 30px;
 }
