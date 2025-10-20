@@ -1,8 +1,28 @@
 .video-stream-box {
   margin-top: 20px;
+  width: 100vw;                          /* 影像滿版寬度 */
+  margin-left: calc(-50vw + 50%);        /* 把內容對齊螢幕邊界 */
   text-align: center;
+  background-color: #000;                /* 黑底背景讓畫面更清晰 */
+  padding: 10px 0;                       /* 上下留點空間 */
 }
 
+.video-stream-box h3 {
+  color: #fff;                           /* 白字更清楚 */
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.video-stream-box img {
+  width: 100%;                           /* 滿版寬度 */
+  height: auto;                          /* 保持比例 */
+  border-radius: 0;                      /* 移除圓角 */
+  border: none;
+  display: block;
+  margin: 0 auto;
+}
+
+/* 下方辨識結果區 */
 .streaming-result-box {
   margin-top: 20px;
   text-align: center;
@@ -12,7 +32,7 @@
 
 .result-text {
   margin-top: 10px;
-  padding: 10px;
+  padding: 10px 16px;
   border-radius: 10px;
   background-color: #f0f0f0;
   display: inline-block;
@@ -20,6 +40,7 @@
   word-wrap: break-word;
 }
 
+/* 控制按鈕區 */
 .action-bar {
   margin-top: 30px;
   text-align: center;
@@ -33,8 +54,19 @@
   color: white;
   border: none;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .record-button:hover {
-  background-color: #0056b3;
+  background-color: #4b4037;             /* 改為深咖啡色 hover 效果 */
+}
+
+/* 🔹 RWD：手機版影像稍微縮放避免過大 */
+@media (max-width: 768px) {
+  .video-stream-box {
+    padding: 5px 0;
+  }
+  .video-stream-box h3 {
+    font-size: 16px;
+  }
 }

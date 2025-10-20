@@ -146,11 +146,13 @@ def handle_natural_res():
 def translate_sign():
     # 從前端取出傳過來的手語句子，如果沒帶就用 last_sign_sentence
     data = request.get_json(silent=True) or {}
-
+    
     # 2) 優先用前端傳 signSentence；若沒傳再用上次存的 trans_res
     sign_sentence = data.get('signSentence')
+    print(data)
     sentence = sign_sentence if sign_sentence else trans_res
-
+    print(sentence)
+    
     # 3) 若還是拿不到，就回 400 或直接空字串
     if not sentence:
         return jsonify({'msg': ''}), 400
