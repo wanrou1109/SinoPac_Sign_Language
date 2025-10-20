@@ -599,7 +599,7 @@ const ConversationScreen = () => {
                     </button>
                 ) : (
                     <button className='finish-button' onClick={handleFinishService}>
-                        <img src='images/logout_white.png' width='30px' alt='SignBank '/>結束
+                        <img src='images/logout_red.png' width='30px' alt='SignBank '/>結束
                     </button>
                 )}
 
