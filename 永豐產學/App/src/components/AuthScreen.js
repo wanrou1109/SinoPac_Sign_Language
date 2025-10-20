@@ -15,8 +15,8 @@ const AuthScreen = () => {
     return (
         <div className='auth-container'>
             <div className='title'>
-                <h1>SignBank: </h1>
-                <h2>AI 手語雙向翻譯系統</h2>
+                SignBank<br />
+                AI 手語雙向翻譯系統
             </div>
 
             <button 

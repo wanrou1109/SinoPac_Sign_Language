@@ -15,7 +15,7 @@ const ScreenSaver = () => {
         <div className="screen-saver-content">
             <div className="bank-logo">
                 <img src="images/SignBank_logo.png" 
-                width='500px'
+                width='300px'
                 alt="SignBank" />
             </div>
             <div className="touch-instruction">

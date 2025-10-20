@@ -12,11 +12,15 @@
   text-align: center;
   display: flex;
   flex-direction: column;
-  font-size: 25px;
+  line-height: 2.5;
+  font-size: 40px;
   color: black;
   padding-bottom: 60px;
 }
 
+.title .p {
+  margin-block-start: 10px;
+}
 .start-button {
   border: none;
   border-radius: 10px;

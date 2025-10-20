@@ -1,14 +1,11 @@
 .screen-saver {
-    height: 100vh;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    background-color: #e0e0e0;
-    color: black;
-    cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center;
+  position: relative;
+  height: 100vh;
+  background-color: #e0e0e0;
 }
 
 .screen-saver-content {
@@ -34,7 +31,7 @@
 @media (max-width: 860px) {
     .screen-saver {
         width: 90%;
-        height: auto;
+        height: 100vh;
         padding: 40px;
     }
 } 
