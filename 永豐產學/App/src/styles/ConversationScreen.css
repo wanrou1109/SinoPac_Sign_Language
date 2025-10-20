@@ -287,8 +287,8 @@
 }
 
 .image-button {
-    border: none;
-    background-color: none;
+    border: white;
+    background-color: white;
 }
 
 .edit-buttons {
