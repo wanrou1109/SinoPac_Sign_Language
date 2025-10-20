@@ -4,20 +4,23 @@
   align-items: center; 
   justify-content: center;
   position: relative;
-  height: 96vh;
-  background-color: #9b8269;
+  height: 100vh;
+  background-color: #e0e0e0;
 }
 
 .title {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  font-size: 25px;
-  color: #fff1e6;
-  padding-bottom: 20px;
+  line-height: 2.5;
+  font-size: 40px;
+  color: black;
+  padding-bottom: 60px;
 }
 
+.title .p {
+  margin-block-start: 10px;
+}
 .start-button {
   border: none;
   border-radius: 10px;
@@ -25,7 +28,7 @@
   padding: 15px 20px;
   width: 80%;
   max-width: 300px;
-  background-color: #fff1e6;
-  color: #9b8269;
+  background-color: #007bff;
+  color: white;
   cursor: pointer;
 }

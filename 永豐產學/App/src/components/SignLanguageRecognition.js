@@ -118,7 +118,7 @@ const SignLanguageRecognition = () => {
       <Header showBackButton={true} onBack={handleBack} />
 
       <div className='video-stream-box'>
-        <h3>後端辨識串流畫面：</h3>
+        {/*<h3>後端辨識串流畫面：</h3>*/}
         <img
           src="http://localhost:5050/video_feed"
           alt="Video Feed"

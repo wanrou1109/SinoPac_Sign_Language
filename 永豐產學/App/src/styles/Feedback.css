@@ -6,7 +6,7 @@
     max-width: 834px;
     max-height: 1194px;
     margin: 0 auto;
-    background-color: #fffaf5;
+    background-color: white;
 }
 
 .feedback-container {
@@ -18,8 +18,11 @@
 }
 
 .section-title {
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 20px;
+    font-weight: normal;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
     margin-bottom: 0; 
     margin-right: 20px;
 }
@@ -33,7 +36,7 @@
 .rating-row {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
     width: 100%;
 }
@@ -43,14 +46,14 @@
 }
 
 .star {
-    font-size: 40px;
+    font-size: 32px;
     margin-right: 15px;
     cursor: pointer;
-    color: #ddd4cc;
+    color: #e0e0e0;
 }
 
 .star.active {
-    color: #826e5a; 
+    color: black; 
 }
 
 .comment-section {
@@ -76,7 +79,6 @@
     height: 250px;
     padding: 20px;
     border-radius: 15px;
-    border: none;
     background-color: white;
     font-size: 18px;
     resize: none;
@@ -87,7 +89,7 @@
     height: 60px;
     border-radius: 10px;
     border: none;
-    background-color: #ddd4cc;
+    background-color: #e0e0e0;
     color: white;
     font-size: 20px;
     font-weight: bold;
@@ -101,7 +103,7 @@
 }
 
 .submit-button.active {
-    background-color: #9b8269; 
+    background-color: #007bff; 
     color: white;
 }
 

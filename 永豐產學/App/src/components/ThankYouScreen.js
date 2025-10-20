@@ -19,14 +19,16 @@ const ThankYouScreen = () => {
             <div className="thank-you-frame">
                 <div className="logo-container">
                     <img 
-                        src="images/SinoPac.jpeg" 
-                        alt="永豐銀行" 
+                        src="images/SignBank_no_words.png" 
+                        alt="SignBank" 
                         className="bank-logo" 
                     />
                 </div>
 
                 <div className="message-container">
-                    <p className="system-name">手語/語音辨識系統</p>
+                    <p className="system-name">SignBank:</p>
+                    <p className='system-name'>AI 金融雙向手語翻譯系統</p>
+                    <p> </p>
                     <p className="thank-you-message">感謝您的建議與回饋</p>
                     <p className="welcome-message">歡迎再度使用～</p>
                 </div>
