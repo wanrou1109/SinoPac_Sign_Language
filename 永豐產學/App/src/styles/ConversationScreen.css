@@ -288,7 +288,7 @@
 
 .image-button {
     border: none;
-    background-color: #e0e0e0;
+    background-color: none;
 }
 
 .edit-buttons {
@@ -308,7 +308,7 @@
 }
 
 .edit-buttons button:last-child {
-    background-color: #DDDDDD;
+    background-color: none;
 }
   
 .action-bar {
@@ -333,8 +333,8 @@
 }
 
 .finish-button {
-    background-color: #4c7354b3;
-    color: rgb(255, 255, 255);
+    background-color: #f8d7da;
+    color: #de541e;
     display: flex;
     align-items: center;
     border-radius: 10px;
