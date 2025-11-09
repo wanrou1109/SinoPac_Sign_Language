@@ -234,7 +234,6 @@ def start():
     # ==================== 動作標籤 ====================
     if num_classes == 5:
         actions = np.array(['apply_for', 'complete', 'no', 'problem', 'sign'])
-
     elif num_classes == 7:
         actions = np.array(['apply_for', 'life', 'me', 'no',
                             'problem', 'save_money', 'use'])
@@ -293,9 +292,8 @@ def start():
 
     sequence, sentence, predictions = [], [], []
     threshold = 0.7
-    alarm_set = False
     trans_result = ""
-    last_updated_time = time.time()
+    last_updated_time = time.time()  # 最近一次「新增詞」的時間
 
     print("🎥 開始手語辨識...")
 
@@ -331,30 +329,34 @@ def start():
                         most_common = Counter(predictions[-10:]).most_common(1)[0][0]
                         if most_common == np.argmax(res):
                             current_action = actions[np.argmax(res)]
+                            # 只有與最後一個不同時才加入
                             if len(sentence) == 0 or current_action != sentence[-1]:
                                 sentence.append(current_action)
-                                sequence = []
+                                # 只保留最後 5 個詞（若有需求）
+                                if len(sentence) > 5:
+                                    sentence = sentence[-5:]
+                                sequence = []  # 重置序列以開始收集下一段
                                 last_updated_time = time.time()
-                                alarm_set = True
+
+                                # === 有新詞就「立刻送出」更新 ===
+                                trans_result = ' '.join(sentence)
+                                print(f'---手語語序(更新)---: {trans_result}')
+                                try:
+                                    requests.post('http://localhost:5050/handlanRes',
+                                                  data={'result': trans_result})
+                                except Exception as e:
+                                    print(f"❌ POST 錯誤: {e}")
                 except Exception as e:
                     print(f"❌ 預測錯誤: {e}")
 
-            if len(sentence) > 5:
-                sentence = sentence[-5:]
-
-            # ==================== 定時發送結果 ====================
+            # ==================== 動態清空：10s 無更新就清空 ====================
             current_time = time.time()
-            if alarm_set and current_time - last_updated_time >= 1:
-                trans_result = ' '.join(sentence)
-                print(f'---手語語序---: {trans_result}')
-                try:
-                    requests.post('http://localhost:5050/handlanRes', 
-                                data={'result': trans_result})
-                except Exception as e:
-                    print(f"❌ POST 錯誤: {e}")
-                alarm_set = False
+            if sentence and current_time - last_updated_time >= 10:
+                print("⏱️ 10s 無更新，清空句子與序列")
                 sequence = []
+                predictions = []
                 sentence = []
+                trans_result = ""
 
             # ==================== 畫面顯示 ====================
             img = np.zeros((40, 640, 3), dtype='uint8')
