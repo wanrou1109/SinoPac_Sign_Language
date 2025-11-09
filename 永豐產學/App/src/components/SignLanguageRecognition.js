@@ -13,6 +13,11 @@ const SignLanguageRecognition = () => {
   // const resultBoxRef = useRef(null);
   const editMessageID = useLocation().state?.messageID || null;
 
+  // 設置初始辨識狀態
+  useEffect(() => {
+    setIsRecording(true);
+  }, []);
+
   // 每 2 秒抓一次後端 LLM 轉換結果
   // useEffect(() => {
   //   const interval = setInterval(async () => {
@@ -85,7 +90,7 @@ const SignLanguageRecognition = () => {
   // 新增：按下停止，才把手語句送到後端翻譯
   const handleStop = async () => {
     // 1) 停辨識、更新狀態
-    // setIsRecording(false);
+    setIsRecording(false);
     setRecognitionStatus('idle');
 
     // 2) 一次拿到翻譯
@@ -107,7 +112,7 @@ const SignLanguageRecognition = () => {
 
   // 傳統的「取消／返回」只切畫面，不觸發翻譯
   const handleBack = () => {
-    // setIsRecording(false);
+    setIsRecording(false);
     setRecognitionStatus('idle');
     navigate('/conversation');
   };
@@ -136,7 +141,10 @@ const SignLanguageRecognition = () => {
       </div>
 
       <div className='action-bar'>
-        <button className='custom-record-button recording-active' onClick={handleStop}>
+        <button 
+          className={`custom-record-button ${isRecording ? 'recording-active' : ''}`} 
+          onClick={handleStop}
+        >
           <div className='button-inner'></div>
         </button>
       </div>
