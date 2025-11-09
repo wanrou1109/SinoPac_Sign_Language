@@ -114,7 +114,7 @@ def translate_sentence(user_message: str) -> str:
         {"role": "user",   "content": user_message}
     ]
     resp = client.chat.completions.create(
-        model="qwen/qwen2.5-vl-72b-instruct:free",
+        model="qwen/qwen2.5-vl-72b-instruct",
         messages=messages
     )
     bot_reply = resp.choices[0].message.content.strip()

@@ -181,6 +181,15 @@ def start():
     print("🚀 啟動手語辨識系統...")
     
     model_candidates = [
+        "./App/Model/model_1101.keras",
+        "./App/Model/model_1104_4da_min_delta=5e-4.keras",
+        "./App/Model/model_1104_min_delta=5e-4.keras",
+        "./App/Model/model_1104_overfitting.keras",
+        "./App/Model/model_1104_twice_3da_min_delta=5e-4.keras",
+        "./App/Model/model_1104_3da_min_delta=5e-4.keras",
+        "./App/Model/model_1104_twice_2da_min_delta=5e-4.keras",
+        "./App/Model/model_1104_5da_min_delta=5e-4.keras",
+        "./App/Model/model_1104_twice_4da_min_delta=5e-4.keras",
         "./App/Model/model3_2da_atten_with_arm.keras",
         "./App/Model/model2_2da_with_arm.keras",
         "./App/Model/model1_jnoise_with_arm.keras",
@@ -225,6 +234,13 @@ def start():
     # ==================== 動作標籤 ====================
     if num_classes == 5:
         actions = np.array(['apply_for', 'complete', 'no', 'problem', 'sign'])
+
+    elif num_classes == 7:
+        actions = np.array(['apply_for', 'life', 'me', 'no',
+                            'problem', 'save_money', 'use'])
+    elif num_classes == 8:
+        actions = np.array(['apply_for', 'life', 'me', 'no', 'saving_book',
+                            'problem', 'save_money', 'use'])
     elif num_classes == 10:
         actions = np.array(['complete', 'this', 'id_card', 'paper', 'sign',
                             'cover_name', 'various', 'use', 'life', 'want'])
@@ -328,7 +344,7 @@ def start():
 
             # ==================== 定時發送結果 ====================
             current_time = time.time()
-            if alarm_set and current_time - last_updated_time >= 10:
+            if alarm_set and current_time - last_updated_time >= 1:
                 trans_result = ' '.join(sentence)
                 print(f'---手語語序---: {trans_result}')
                 try:
