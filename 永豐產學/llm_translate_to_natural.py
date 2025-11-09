@@ -48,8 +48,15 @@ index.add(corpus_embeddings)
 
 def retrieve_relevant_sentences(query: str, k=5) -> List[str]:
     q_emb = embedder.encode([query], convert_to_numpy=True)
-    _, indices = index.search(q_emb, k)
-    return [corpus[i] for i in indices[0]]
+    D, I = index.search(q_emb, k)
+    # 只保留相似度高於門檻的句子
+    threshold = 0.6
+    filtered = [corpus[i] for d, i in zip(D[0], I[0]) if d < threshold]
+    if not filtered:
+        filtered = [query]
+
+    return filtered
+
 
 def ensure_traditional_chinese(text: str) -> Tuple[str, List[Dict[str, str]]]:
     translator = GoogleTranslator(source='auto', target='zh-TW')
@@ -72,16 +79,21 @@ def ensure_traditional_chinese(text: str) -> Tuple[str, List[Dict[str, str]]]:
 
 # === 供外部使用的主函數 ===
 def translate_to_natural(user_message: str) -> str:
-    related = retrieve_relevant_sentences(user_message, k=5)
+    # ✅ 對短句不檢索，直接翻譯
+    if len(user_message.strip().split()) <= 1:
+        related = []
+    else:
+        related = retrieve_relevant_sentences(user_message, k=5)
+
     context = "\n".join(f"- {s}" for s in related)
 
     system_prompt = f"""
 你是一位專業的手語翻譯專家，請將「手語語序」轉換成自然的中文語句，並模仿銀行行員的口吻。
 你**只能**使用**繁體中文**及中文標點作答，**絕對不要**摻任何英文字母、拼音或其他語種符號。
 **請注意：**
-1. ✏️ 只輸出自然語序的中文句子，**不要**加入任何多餘說明文字。
-2. 🎭 如果輸入與劇本例句相似，請盡量套用相同句型。
-3. ✅ 假設你是銀行行員，用禮貌、清晰的客服語氣回答。
+1. 只輸出自然語序的中文句子，**不要**加入任何多餘說明文字。
+2. 如果輸入與劇本例句相似，請盡量套用相同句型。
+3. 假設你是銀行行員，用禮貌、清晰的客服語氣回答。
 
 **範例對照：**
 - 手語：我 申請 存摺  

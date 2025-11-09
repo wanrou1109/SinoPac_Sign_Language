@@ -219,10 +219,10 @@ def start():
     # ==================== 解析模型參數 ====================
     try:
         in_shape = new_model.input.shape
-        sequence_length = int(in_shape[1]) if in_shape[1] is not None else 30
+        sequence_length = int(in_shape[1]) if in_shape[1] is not None else 60
         feat_dim = int(in_shape[2]) if in_shape[2] is not None else 52
     except Exception:
-        sequence_length, feat_dim = 30, 52
+        sequence_length, feat_dim = 60, 52
 
     try:
         num_classes = int(new_model.output.shape[-1])
