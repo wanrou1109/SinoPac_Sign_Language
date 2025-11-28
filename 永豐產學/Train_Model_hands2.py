@@ -359,27 +359,41 @@ def start():
                 trans_result = ""
 
             # ==================== 畫面顯示 ====================
+            # -----（已備註）顯示 trans_result 的 PIL 黑色文字條 -----
+            """
             img = np.zeros((40, 640, 3), dtype='uint8')
             try:
                 font = ImageFont.truetype("arial.ttf", 20)
             except OSError:
                 font = ImageFont.load_default()
-            
+
             img_pil = Image.fromarray(img)
             draw = ImageDraw.Draw(img_pil)
             draw.text((0, 0), trans_result, fill=(255, 255, 255), font=font)
             img = np.array(img_pil)
 
-            cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
-            cv2.putText(frame, ' '.join(sentence), (3, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            
+            # 保持寬度及 dtype 一致
             if frame.shape[1] != img.shape[1]:
                 img = cv2.resize(img, (frame.shape[1], img.shape[0]))
             if frame.dtype != img.dtype:
                 img = img.astype(frame.dtype)
+            """
+            # --------------------------------------------------
 
+
+            # 上方橘色條（如果不想要條，也可以把這行註解掉）
+            #cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
+
+            # 原本顯示 sentence 的地方（會出現 "no" → 已註解）
+            # cv2.putText(frame, ' '.join(sentence), (3, 30),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+            # 下面加一條空白區塊，讓 vconcat 不會出錯
+            img = np.zeros((40, frame.shape[1], 3), dtype='uint8')
+
+            # 上面是 frame，下面是空白條
             output_frame = cv2.vconcat([frame, img])
+
             ret, buffer = cv2.imencode('.jpg', output_frame)
             if not ret:
                 continue
@@ -387,7 +401,7 @@ def start():
 
             try:
                 yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             except GeneratorExit:
                 break
 
