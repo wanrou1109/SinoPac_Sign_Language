@@ -14,15 +14,17 @@ def start():
     import tensorflow as tf
     from tensorflow.keras.models import load_model
     from tensorflow.keras.layers import Layer
+    from tensorflow.keras import layers
     import os
 
     # ==================== 自訂層定義 ====================
     class CustomLSTM(tf.keras.layers.LSTM):
         def __init__(self, *args, **kwargs):
+            # Keras 3 可能不支援 time_major，先安全移除
             kwargs.pop('time_major', None)
             super().__init__(*args, **kwargs)
 
-    class SelfAttention(Layer):
+    class SelfAttention(tf.keras.layers.Layer):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
             self.supports_masking = True
@@ -40,28 +42,116 @@ def start():
             super().build(input_shape)
 
         def call(self, x, mask=None):
-            e = tf.nn.tanh(tf.tensordot(x, self.W, axes=[[2],[0]]) + self.b)
+            # x: (batch, seq_len, d)
+            e = tf.nn.tanh(tf.tensordot(x, self.W, axes=[[2], [0]]) + self.b)
+
             if mask is not None:
                 mask = tf.cast(mask, dtype=e.dtype)[:, :, tf.newaxis]
                 e = e - (1.0 - mask) * 1e9
+
             alpha = tf.nn.softmax(e, axis=1)
             context = x * alpha
             return tf.reduce_sum(context, axis=1)
 
+        def compute_output_shape(self, input_shape):
+            # (batch, d)
+            return (input_shape[0], input_shape[2])
+
         def compute_mask(self, inputs, mask=None):
             return None
 
+    class LearnablePositionEmbedding(Layer):
+        """
+        ✅ 跟訓練時一模一樣：
+        __init__(self, seq_len, d_model, **kwargs)
+        """
+        def __init__(self, seq_len, d_model, **kwargs):
+            super().__init__(**kwargs)
+            self.seq_len = seq_len
+            self.d_model = d_model
+
+        def build(self, input_shape):
+            self.pos_emb = self.add_weight(
+                name="pos_embedding",
+                shape=(self.seq_len, self.d_model),
+                initializer="random_normal",
+                trainable=True
+            )
+            super().build(input_shape)
+
+        def call(self, x):
+            pos = tf.expand_dims(self.pos_emb, axis=0)   # (1, seq_len, d_model)
+            return x + pos
+
+        # 可加可不加，Keras 沒寫也會從 __init__ 推 config
         def get_config(self):
-            return super().get_config()
+            config = super().get_config()
+            config.update({
+                "seq_len": self.seq_len,
+                "d_model": self.d_model,
+            })
+            return config
+
+    class TransformerEncoderBlock(layers.Layer):
+        """
+        ✅ 完全照你訓練時的版本：
+        __init__(self, d_model, num_heads, dff, dropout_rate=0.1, **kwargs)
+        """
+        def __init__(self, d_model, num_heads, dff, dropout_rate=0.1, **kwargs):
+            super().__init__(**kwargs)
+            self.d_model = d_model
+            self.num_heads = num_heads
+            self.dff = dff
+            self.dropout_rate = dropout_rate
+
+            self.mha = layers.MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
+            self.norm1 = layers.LayerNormalization(epsilon=1e-6)
+
+            self.ffn_dense1 = layers.Dense(dff, activation="relu")
+            self.ffn_dense2 = layers.Dense(d_model)
+
+            self.norm2 = layers.LayerNormalization(epsilon=1e-6)
+
+            self.dropout1 = layers.Dropout(dropout_rate)
+            self.dropout2 = layers.Dropout(dropout_rate)
+
+        def call(self, x, training=False, mask=None):
+            attn_output = self.mha(
+                query=x,
+                value=x,
+                key=x,
+                attention_mask=mask
+            )
+            attn_output = self.dropout1(attn_output, training=training)
+            out1 = self.norm1(x + attn_output)
+
+            ffn_output = self.ffn_dense1(out1)
+            ffn_output = self.ffn_dense2(ffn_output)
+            ffn_output = self.dropout2(ffn_output, training=training)
+
+            out2 = self.norm2(out1 + ffn_output)
+            return out2
+
+        def get_config(self):
+            config = super().get_config()
+            config.update({
+                "d_model": self.d_model,
+                "num_heads": self.num_heads,
+                "dff": self.dff,
+                "dropout_rate": self.dropout_rate,
+            })
+            return config
+
+
 
     # ==================== 骨架邊定義 ====================
     HAND_EDGES = [
-        (0,1), (1,2), (2,3), (3,4),
-        (0,5), (5,6), (6,7), (7,8),
-        (0,9), (9,10), (10,11), (11,12),
-        (0,13), (13,14), (14,15), (15,16),
-        (0,17), (17,18), (18,19), (19,20),
-        (5,9), (9,13), (13,17),
+        (0, 1), (1, 2), (2, 3), (3, 4),
+        (0, 5), (5, 6), (6, 7), (7, 8),
+        (0, 9), (9, 10), (10, 11), (11, 12),
+        (0, 13), (13, 14), (14, 15), (15, 16),
+        (0, 17), (17, 18), (18, 19), (19, 20),
+        (5, 9), (9, 13), (13, 17),
     ]
 
     ARM_EDGES = [
@@ -81,9 +171,11 @@ def start():
         arm_points = {'left': {}, 'right': {}}
         if pose_landmarks:
             landmarks = pose_landmarks.landmark
+            # left arm: 肩(11), 手肘(13), 手腕(15)
             arm_points['left'][21] = np.array([landmarks[11].x, landmarks[11].y, landmarks[11].z], dtype=np.float32)
             arm_points['left'][22] = np.array([landmarks[13].x, landmarks[13].y, landmarks[13].z], dtype=np.float32)
             arm_points['left'][23] = np.array([landmarks[15].x, landmarks[15].y, landmarks[15].z], dtype=np.float32)
+            # right arm: 肩(12), 手肘(14), 手腕(16)
             arm_points['right'][21] = np.array([landmarks[12].x, landmarks[12].y, landmarks[12].z], dtype=np.float32)
             arm_points['right'][22] = np.array([landmarks[14].x, landmarks[14].y, landmarks[14].z], dtype=np.float32)
             arm_points['right'][23] = np.array([landmarks[16].x, landmarks[16].y, landmarks[16].z], dtype=np.float32)
@@ -100,7 +192,7 @@ def start():
         d = _safe_dist(hand_xyz[0], hand_xyz[9])
         if d > 0:
             return max(d, eps)
-        alts = [_safe_dist(hand_xyz[0], hand_xyz[j]) for j in (5,9,13,17)]
+        alts = [_safe_dist(hand_xyz[0], hand_xyz[j]) for j in (5, 9, 13, 17)]
         alts = [a for a in alts if a > 0]
         return max(float(np.mean(alts)), eps) if alts else 1.0
 
@@ -147,7 +239,7 @@ def start():
     def extract_features_from_mediapipe(results, feat_dim, scaler=None):
         lh_xyz = _hand_xyz_from_results(results.left_hand_landmarks)
         rh_xyz = _hand_xyz_from_results(results.right_hand_landmarks)
-        
+
         if feat_dim == 126:
             feat = np.concatenate([lh_xyz.flatten(), rh_xyz.flatten()])
         elif feat_dim == 46:
@@ -179,9 +271,12 @@ def start():
 
     # ==================== 載入模型 ====================
     print("🚀 啟動手語辨識系統...")
-    
+
     model_candidates = [
-        "./App/Model/model_1101.keras",
+        "./App/Model/model_1126_2t.keras",#陳家祥：無法載入
+        "./App/Model/model_1126_1t2GRU.keras",#陳家祥：無法載入
+        "./App/Model/model_1126_2t1GRU.keras",#陳家祥：無法載入
+        "./App/Model/model_1126_3GRU.keras", #陳家祥：可以載入
         "./App/Model/model_1104_4da_min_delta=5e-4.keras",
         "./App/Model/model_1104_min_delta=5e-4.keras",
         "./App/Model/model_1104_overfitting.keras",
@@ -196,22 +291,29 @@ def start():
         "./App/Model/yu2_2da_atten_0907.keras",
         "./App/Model/yu1_2da_0907.keras",
         "./App/Model/j1_0907_noise.keras",
-        "App/Model/model_hands4_v2.keras",  # 舊模型備用
+        "./App/Model/model_1123_5da.keras",
+        "./App/Model/model_hands4_v2.keras",  # 舊模型備用
     ]
-    
+
+    custom_objs = {
+        'SelfAttention': SelfAttention,
+        'CustomLSTM': CustomLSTM,
+        'LearnablePositionEmbedding': LearnablePositionEmbedding,
+    }
+
     new_model = None
     for mpath in model_candidates:
         try:
             new_model = load_model(
-                mpath, 
-                custom_objects={'SelfAttention': SelfAttention, 'CustomLSTM': CustomLSTM},
+                mpath,
+                custom_objects=custom_objs,
                 compile=False
             )
             print(f"✅ 成功載入模型：{mpath}")
             break
         except Exception as e:
             print(f"⚠️ 嘗試載入 {mpath} 失敗：{e}")
-    
+
     if new_model is None:
         print("❌ 無法載入任何模型")
         return
@@ -243,6 +345,9 @@ def start():
     elif num_classes == 10:
         actions = np.array(['complete', 'this', 'id_card', 'paper', 'sign',
                             'cover_name', 'various', 'use', 'life', 'want'])
+    elif num_classes == 11:
+        actions = np.array(['apply_for', 'life', 'me', 'no', 'saving_book',
+                            'problem', 'save_money', 'use', 'id_card', 'ok', 'this'])
     elif num_classes == 12:
         actions = np.array(['complete', 'apply_for', 'invest', 'cover_name', 'me',
                             'passbook', 'use', 'various', 'want', 'what', 'id_card', 'paper'])
@@ -302,7 +407,7 @@ def start():
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             frame = cv2.flip(frame, 1)
             results = mediapipe_detection(frame, holistic)
             draw_styled_landmarks(frame, results)
@@ -359,7 +464,7 @@ def start():
                 trans_result = ""
 
             # ==================== 畫面顯示 ====================
-            # -----（已備註）顯示 trans_result 的 PIL 黑色文字條 -----
+            # （已備註）顯示 trans_result 的 PIL 黑色文字條
             """
             img = np.zeros((40, 640, 3), dtype='uint8')
             try:
@@ -372,23 +477,18 @@ def start():
             draw.text((0, 0), trans_result, fill=(255, 255, 255), font=font)
             img = np.array(img_pil)
 
-            # 保持寬度及 dtype 一致
             if frame.shape[1] != img.shape[1]:
                 img = cv2.resize(img, (frame.shape[1], img.shape[0]))
             if frame.dtype != img.dtype:
                 img = img.astype(frame.dtype)
             """
-            # --------------------------------------------------
 
-
-            # 上方橘色條（如果不想要條，也可以把這行註解掉）
-            #cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
-
-            # 原本顯示 sentence 的地方（會出現 "no" → 已註解）
+            # 上方橘色條與文字都不要，所以註解掉
+            # cv2.rectangle(frame, (0, 0), (640, 40), (245, 117, 16), -1)
             # cv2.putText(frame, ' '.join(sentence), (3, 30),
             #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            # 下面加一條空白區塊，讓 vconcat 不會出錯
+            # 下面加一條黑色空白區塊，讓 vconcat 不會出錯
             img = np.zeros((40, frame.shape[1], 3), dtype='uint8')
 
             # 上面是 frame，下面是空白條
@@ -401,7 +501,7 @@ def start():
 
             try:
                 yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             except GeneratorExit:
                 break
 
