@@ -172,9 +172,7 @@ const SignLanguageRecognition = () => {
   return (
     <div className='sign-recognition-screen'>
       <Header showBackButton={true} onBack={handleBack} />
-      
-      {/* === 3. 修改：即時顯示辨識到的中文手語詞彙 === */}
-      <div style={{
+          <div style={{
           marginTop: '15px',
           fontSize: '1.2rem',
           color: '#333',
@@ -184,11 +182,10 @@ const SignLanguageRecognition = () => {
           fontFamily: '"Microsoft JhengHei", sans-serif'
       }}>
         辨識到的手語是：
-        <span style={{ color: '#007bff', marginLeft: '8px' }}>
+        <span style={{ fontSize: '14px', color: '#333', marginLeft: '8px' }}>
             {getDisplaySentence(rawSentence)}
         </span>
       </div>
-      {/* ======================================= */}
       
       <div className='video-stream-box'>
         <img
